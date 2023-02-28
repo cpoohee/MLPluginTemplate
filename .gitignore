@@ -1,4 +1,4 @@
 *.wav
-/data
 /outputs
 .idea
+.ipynb_checkpoints
