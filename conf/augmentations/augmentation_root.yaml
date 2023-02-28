@@ -1,0 +1,7 @@
+do_timeshift: false
+
+do_random_block: false
+
+do_polarity_inv: false
+
+do_gain: false

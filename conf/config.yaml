@@ -1,3 +1,5 @@
 defaults:
   - download_data: download
   - process_data: process_root
+  - augmentations: augmentation_root
+  - dataset: nus
