@@ -1,0 +1,2 @@
+audio_dirs: ["./data/interim/vocalset"]
+dataset_label: "vocalset"

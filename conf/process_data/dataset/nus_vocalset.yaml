@@ -1,0 +1,3 @@
+audio_dirs: ["./data/interim/nus-48e",
+              "./data/interim/vocalset"]
+dataset_label: 'nus_vocalset'

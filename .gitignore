@@ -1,0 +1,4 @@
+*.wav
+/data
+/outputs
+.idea

@@ -1,0 +1,9 @@
+defaults:
+  - dataset: nus
+
+seed: 1
+train_ratio: 0.7
+val_ratio: 0.5 # of the 0.3 left
+ext: 'wav'
+sr: 44100
+clip_interval_ms: 1000

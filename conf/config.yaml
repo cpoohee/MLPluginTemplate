@@ -1,0 +1,3 @@
+defaults:
+  - download_data: download
+  - process_data: process_root

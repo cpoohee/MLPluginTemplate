@@ -1,0 +1,2 @@
+audio_dirs: ["./data/interim/nus-48e"]
+dataset_label: "nus"
