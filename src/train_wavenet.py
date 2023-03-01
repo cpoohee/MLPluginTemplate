@@ -5,6 +5,7 @@ from pathlib import Path
 from omegaconf import DictConfig
 from src.datamodule.audio_datamodule import AudioDataModule
 from src.model.wavenet import WaveNet_PL
+from pytorch_lightning.callbacks import ModelCheckpoint
 
 
 @hydra.main(config_path="../conf", config_name="config")
@@ -19,9 +20,19 @@ def main(cfg: DictConfig):
 
     wavenet_model = WaveNet_PL(cfg)
 
+    if cfg.training.use_checkpoint_callback:
+        checkpoint_callback = ModelCheckpoint(
+            dirpath=cfg.training.model_checkpoint_path,
+            filename=cfg.training.experiment_name + '{epoch}-{val_loss:.2f}-{other_metric:.2f}'
+        )
+    else:
+        checkpoint_callback = None
+
     trainer = pl.Trainer(
         max_epochs=cfg.training.max_epochs,
+        check_val_every_n_epoch=cfg.training.check_val_every_n_epoch,
         accelerator=cfg.training.accelerator,
+        callbacks=[checkpoint_callback]
     )
 
     if cfg.training.resume_checkpoint:
@@ -29,8 +40,13 @@ def main(cfg: DictConfig):
     else:
         ckpt_path = None
 
-    trainer.fit(wavenet_model, train_dataloaders=dm_train, ckpt_path=ckpt_path)
-    trainer.save_checkpoint(cfg.training.experiment_ckpt_name)
+    trainer.fit(wavenet_model,
+                train_dataloaders=dm_train,
+                ckpt_path=ckpt_path,
+    )
+
+    save_model_path = Path(cfg.training.model_checkpoint_path) / (cfg.training.experiment_name + 'ckpt')
+    trainer.save_checkpoint(save_model_path)
 
 
 if __name__ == "__main__":

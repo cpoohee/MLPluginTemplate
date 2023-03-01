@@ -2,15 +2,13 @@
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-
 import pytorch_lightning as pl
-import pickle
-import os
 from omegaconf import DictConfig
 
+
 class CausalConv1d(torch.nn.Conv1d):
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, dilation=1, groups=1, bias=True):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, dilation=1, groups=1,
+                 bias=True):
         self.__padding = (kernel_size - 1) * dilation
 
         super(CausalConv1d, self).__init__(
@@ -86,10 +84,10 @@ class WaveNet(nn.Module):
             skips.append(out)
 
             out = residual(out)
-            out = out + x[:, :, -out.size(2) :]
+            out = out + x[:, :, -out.size(2):]
 
         # modified "postprocess" step:
-        out = torch.cat([s[:, :, -out.size(2) :] for s in skips], dim=1)
+        out = torch.cat([s[:, :, -out.size(2):] for s in skips], dim=1)
         out = self.linear_mix(out)
         return out
 
@@ -127,14 +125,14 @@ class WaveNet_PL(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         y_pred = self.forward(x)
-        loss = error_to_signal(y[:, :, -y_pred.size(2) :], y_pred).mean()
+        loss = error_to_signal(y[:, :, -y_pred.size(2):], y_pred).mean()
         logs = {"loss": loss}
         return {"loss": loss, "log": logs}
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
         y_pred = self.forward(x)
-        loss = error_to_signal(y[:, :, -y_pred.size(2) :], y_pred).mean()
+        loss = error_to_signal(y[:, :, -y_pred.size(2):], y_pred).mean()
         return {"val_loss": loss}
 
     def validation_epoch_end(self, outs):
