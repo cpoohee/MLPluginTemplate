@@ -3,3 +3,4 @@
 .idea
 .ipynb_checkpoints
 tests/.pytest_cache
+/lightning_logs
