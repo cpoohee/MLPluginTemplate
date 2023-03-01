@@ -117,7 +117,7 @@ class AudioDataset(Dataset):
 
         self.apply_augmentation_indep = Compose(transforms)
 
-        self.apply_augmentation_crop = Compose([RandomCrop(max_length=self.sample_length,
+        self.apply_augmentation_crop = Compose([RandomCrop(max_length=self.block_size,
                                                            sampling_rate=self.sample_rate,
                                                            max_length_unit='samples'),
                                                 ])
