@@ -1,6 +1,6 @@
-## python src/process_data.py +process_data.dataset=nus
-## python src/process_data.py +process_data.dataset=vocalset
-## python src/process_data.py +process_data.dataset=nus_vocalset
+## python src/process_data.py process_data/dataset=nus
+## python src/process_data.py process_data/dataset=vocalset
+## python src/process_data.py process_data/dataset=nus_vocalset
 
 import hydra
 import librosa
