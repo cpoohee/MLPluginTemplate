@@ -23,7 +23,7 @@ def main(cfg: DictConfig):
     if cfg.training.use_checkpoint_callback:
         checkpoint_callback = ModelCheckpoint(
             dirpath=cfg.training.model_checkpoint_path,
-            filename=cfg.training.experiment_name + '{epoch}-{val_loss:.2f}-{other_metric:.2f}'
+            filename=cfg.training.experiment_name + ' {epoch}'
         )
     else:
         checkpoint_callback = None

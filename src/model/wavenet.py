@@ -139,4 +139,5 @@ class WaveNet_PL(pl.LightningModule):
     def validation_epoch_end(self, outs):
         avg_loss = torch.stack([x["val_loss"] for x in outs]).mean()
         logs = {"val_loss": avg_loss}
+        self.log("val_epoch_loss", avg_loss)
         return {"avg_val_loss": avg_loss, "log": logs}
