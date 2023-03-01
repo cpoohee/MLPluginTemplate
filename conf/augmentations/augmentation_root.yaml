@@ -17,8 +17,8 @@ max_transpose_semitones: +4.0
 pitchshift_p: 0.5
 
 do_colored_noise: true
-min_snr_in_db: 0.5
-max_snr_in_db: 5.0
+min_snr_in_db: 20.0
+max_snr_in_db: 30.0
 min_f_decay: -2.0
 max_f_decay: 2.0
 colored_noise_p: 0.3

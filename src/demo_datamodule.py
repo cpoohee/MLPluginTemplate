@@ -1,8 +1,8 @@
 import hydra
 import os
+import simpleaudio as sa
 from pathlib import Path
 from omegaconf import DictConfig
-
 from src.datamodule.audio_datamodule import AudioDataModule
 
 
@@ -19,8 +19,14 @@ def main(cfg: DictConfig):
     dm_train.setup(stage='fit')
 
     for i, batch in enumerate(dm_train.train_dataloader()):
-        print(i)
+        x, y = batch
+        play_tensor(y[0])
 
+
+def play_tensor(tensor_sample, sample_rate=44100):
+    numpy_sample = tensor_sample.numpy()
+    play_obj = sa.play_buffer(numpy_sample, 1, 4, sample_rate=sample_rate)
+    play_obj.wait_done()
 
 if __name__ == "__main__":
     main()
