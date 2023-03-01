@@ -58,11 +58,9 @@ class AudioDataset(Dataset):
         self.max_transpose_semitones_indep = cfg.augmentations.max_transpose_semitones_indep
         self.pitchshift_p_indep = cfg.augmentations.pitchshift_p_indep
 
-    def __len__(self):
-        return len(self.df)
+        self.__initialise_augmentations()
 
-    def __process_augmenations_combo(self, waveform):
-        # conduct more augmentations,
+    def __initialise_augmentations(self):
         # include Identity in case no augmentation done, and apply_augmentation will still be valid
         transforms = [Identity()]
 
@@ -91,12 +89,9 @@ class AudioDataset(Dataset):
                                               p=self.colored_noise_p,
                                               p_mode='per_batch'))
 
-        apply_augmentation = Compose(transforms)
-        waveform = apply_augmentation(waveform, sample_rate=self.sample_rate)
+        self.apply_augmentation_combo = Compose(transforms)
 
-        return waveform
-
-    def __process_augmentations_independent(self, waveform):
+        ## for independent augmentations
         transforms = [Identity()]
 
         if self.aug_gain_indep:
@@ -120,17 +115,27 @@ class AudioDataset(Dataset):
                                 sample_rate=self.sample_rate,
                                 p_mode='per_example'))
 
-        apply_augmentation = Compose(transforms)
-        waveform = apply_augmentation(waveform, sample_rate=self.sample_rate)
+        self.apply_augmentation_indep = Compose(transforms)
 
+        self.apply_augmentation_crop = Compose([RandomCrop(max_length=self.sample_length,
+                                                           sampling_rate=self.sample_rate,
+                                                           max_length_unit='samples'),
+                                                ])
+
+    def __len__(self):
+        return len(self.df)
+
+    def __process_augmentations_combo(self, waveform):
+        # conduct more augmentations,
+        waveform = self.apply_augmentation_combo(waveform, sample_rate=self.sample_rate)
+        return waveform
+
+    def __process_augmentations_independent(self, waveform):
+        waveform = self.apply_augmentation_indep(waveform, sample_rate=self.sample_rate)
         return waveform
 
     def __random_block(self, waveform):
-        apply_augmentation = Compose([RandomCrop(max_length=self.sample_length,
-                                                 sampling_rate=self.sample_rate,
-                                                 max_length_unit='samples'),
-                                                 ])
-        waveform = apply_augmentation(waveform, sample_rate=self.sample_rate)
+        waveform = self.apply_augmentation_crop(waveform, sample_rate=self.sample_rate)
         return waveform
 
     def __getitem__(self, idx):
@@ -161,7 +166,7 @@ class AudioDataset(Dataset):
 
         if self.do_augmentation:
             # do augmentations that we want to affect on both x and y
-            waveform = self.__process_augmenations_combo(waveform)
+            waveform = self.__process_augmentations_combo(waveform)
 
             # do augmentations that we want to affect on x and y independently
             waveform = self.__process_augmentations_independent(waveform)

@@ -21,6 +21,7 @@ def main(cfg: DictConfig):
     for i, batch in enumerate(dm_train.train_dataloader()):
         x, y = batch
         play_tensor(y[0])
+        print(i)
 
 
 def play_tensor(tensor_sample, sample_rate=44100):
