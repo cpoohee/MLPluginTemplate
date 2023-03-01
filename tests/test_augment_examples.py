@@ -22,7 +22,7 @@ def test_per_batch():
     torch_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Make an example tensor with white noise.
-    audio_sample1 = torch.rand(size=(1, 1, 32000), dtype=torch.float32, device=torch_device) - 0.5
+    audio_sample1 = torch.rand(size=(1, 1, 44100), dtype=torch.float32, device=torch_device) - 0.5
 
     # create batch
     audio_samples = torch.cat([audio_sample1,audio_sample1], 0)
