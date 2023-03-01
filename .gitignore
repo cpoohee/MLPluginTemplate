@@ -2,3 +2,4 @@
 /outputs
 .idea
 .ipynb_checkpoints
+tests/.pytest_cache
