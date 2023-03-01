@@ -127,6 +127,7 @@ class WaveNet_PL(pl.LightningModule):
         y_pred = self.forward(x)
         loss = error_to_signal(y[:, :, -y_pred.size(2):], y_pred).mean()
         logs = {"loss": loss}
+        self.log("train_loss", loss, on_epoch=True)
         return {"loss": loss, "log": logs}
 
     def validation_step(self, batch, batch_idx):
