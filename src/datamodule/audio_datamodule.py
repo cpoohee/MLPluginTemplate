@@ -1,8 +1,9 @@
+import numpy as np
 from torch import optim, nn, utils, Tensor
 import pytorch_lightning as pl
-import pathlib as Path
 import librosa
 import pandas as pd
+from pathlib import Path
 from omegaconf import DictConfig
 from src.datamodule.audio_dataloader import AudioDataset
 from torch.utils.data import DataLoader
@@ -32,10 +33,27 @@ class AudioDataModule(pl.LightningDataModule):
         data_path_y = data_path / 'y'
 
         x_files = librosa.util.find_files(data_path_x, ext=self.ext)
-        y_files = librosa.util.find_files(data_path_y, ext=self.ext)
+        y_files_unsorted = librosa.util.find_files(data_path_y, ext=self.ext)
 
-        # TODO: do a proper search to assign y based on filename
-        # for x_file in x_files:
+        # ensure files are unique
+        x_files_unique = np.unique(x_files)
+        y_files_unsorted_unique = np.unique(y_files_unsorted)
+        assert (len(x_files) == len(x_files_unique))
+        assert (len(y_files_unsorted) == len(y_files_unsorted_unique))
+
+        # do a proper search to assign y based on filename
+        y_files = []
+        for x_file in x_files:
+            train_filename = Path(x_file).name
+            found = False
+            for i, y_file in enumerate(y_files_unsorted):
+                if Path(y_file).name == train_filename:
+                    y_files.append(y_file)
+                    y_files_unsorted.pop(i)
+                    found = True
+                    break
+
+            assert (found is True)
 
         data = {'x': x_files, 'y': y_files}
         df = pd.DataFrame(data=data)
