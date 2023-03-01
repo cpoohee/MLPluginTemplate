@@ -18,8 +18,7 @@ class AudioDataset(Dataset):
         self.sample_rate = cfg.dataset.sample_rate
 
         # for cropping audio length
-        self.do_random_block = cfg.augmentations.do_random_block
-        self.sample_length = cfg.augmentations.sample_length
+        self.do_random_block = cfg.dataset.do_random_block
 
         # augmentations params
         self.do_augmentation = do_augmentation
@@ -129,7 +128,8 @@ class AudioDataset(Dataset):
     def __random_block(self, waveform):
         apply_augmentation = Compose([RandomCrop(max_length=self.sample_length,
                                                  sampling_rate=self.sample_rate,
-                                                 max_length_unit='samples')])
+                                                 max_length_unit='samples'),
+                                                 ])
         waveform = apply_augmentation(waveform, sample_rate=self.sample_rate)
         return waveform
 

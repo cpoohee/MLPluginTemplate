@@ -1,5 +1,3 @@
-do_random_block: true
-sample_length: 512
 #######################################
 ## common augmentations on both x and y
 #######################################
