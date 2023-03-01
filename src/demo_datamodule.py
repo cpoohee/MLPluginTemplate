@@ -29,5 +29,6 @@ def play_tensor(tensor_sample, sample_rate=44100):
     play_obj = sa.play_buffer(numpy_sample, 1, 4, sample_rate=sample_rate)
     play_obj.wait_done()
 
+
 if __name__ == "__main__":
     main()

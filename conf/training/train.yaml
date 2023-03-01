@@ -1,1 +1,8 @@
-batch_size: 32
+batch_size: 64
+learning_rate: 0.0001
+max_epochs: 1
+experiment_ckpt_name: './models/wavenet.ckpt'
+accelerator: mps # "cpu", "gpu", "tpu", "ipu", "auto"
+
+resume_checkpoint: false
+checkpoint_file: ''
