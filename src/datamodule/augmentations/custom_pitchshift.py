@@ -10,7 +10,8 @@ from torch_audiomentations.utils.object_dict import ObjectDict
 class PitchShift_Slow(BaseWaveformTransform):
     """
     Pitch-shift sounds up or down without changing the tempo.
-    adapted from the non gpu accelerated audiomentation
+    adapted from the non gpu accelerated audiomentation.
+    micro pitch shifts are allowed
     """
 
     supported_modes = {"per_batch", "per_example", "per_channel"}

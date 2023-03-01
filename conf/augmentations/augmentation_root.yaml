@@ -1,7 +1,45 @@
-do_timeshift: false
+do_random_block: true
+sample_length: 512
+#######################################
+## common augmentations on both x and y
+#######################################
 
-do_random_block: false
+do_gain: true
+min_gain_in_db: -6.0
+max_gain_in_db: 0.0
+gain_p: 0.5
 
-do_polarity_inv: false
+do_polarity_inv: true
+polarity_p: 0.5
 
-do_gain: false
+do_pitchshift: true
+# in seconds
+min_transpose_semitones: -4.0
+max_transpose_semitones: +4.0
+pitchshift_p: 0.5
+
+do_colored_noise: true
+min_snr_in_db: 0.5
+max_snr_in_db: 5.0
+min_f_decay: -2.0
+max_f_decay: 2.0
+colored_noise_p: 0.3
+
+#######################################
+## independent augmentations on x and y
+#######################################
+do_gain_indep: true
+min_gain_in_db_indep: -0.5
+max_gain_in_db_indep: +0.5
+gain_p_indep: 0.9
+
+do_timeshift_indep: true
+# in seconds
+min_shift_indep: -0.02
+max_shift_indep: +0.02
+timeshift_p_indep: 0.9
+
+do_pitchshift_indep: true
+min_transpose_semitones_indep: -0.05
+max_transpose_semitones_indep: +0.05
+pitchshift_p_indep: 0.9

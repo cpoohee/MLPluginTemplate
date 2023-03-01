@@ -3,3 +3,4 @@ defaults:
   - process_data: process_root
   - augmentations: augmentation_root
   - dataset: nus
+  - training: train
