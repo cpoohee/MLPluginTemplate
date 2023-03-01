@@ -115,6 +115,9 @@ class WaveNet_PL(pl.LightningModule):
             kernel_size=cfg.model.kernel_size,
         )
         self.lr = cfg.training.learning_rate
+        self.lossfn = cfg.training.lossfn
+        self.cfg = cfg
+        self.save_hyperparameters()
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.wavenet.parameters(), lr=self.lr)
@@ -123,21 +126,43 @@ class WaveNet_PL(pl.LightningModule):
         return self.wavenet(x)
 
     def training_step(self, batch, batch_idx):
-        x, y = batch
-        y_pred = self.forward(x)
+        y, y_pred = self._shared_eval_step(batch)
         loss = error_to_signal(y[:, :, -y_pred.size(2):], y_pred).mean()
         logs = {"loss": loss}
-        self.log("train_loss", loss, on_epoch=True)
+        self.log("train_loss", loss, on_epoch=True, on_step=False)
         return {"loss": loss, "log": logs}
 
-    def validation_step(self, batch, batch_idx):
+    def _lossfn(self, y, y_pred):
+        if self.lossfn == 'error_to_signal':
+            return error_to_signal(y[:, :, -y_pred.size(2):], y_pred).mean()
+
+    def _shared_eval_step(self, batch):
         x, y = batch
         y_pred = self.forward(x)
-        loss = error_to_signal(y[:, :, -y_pred.size(2):], y_pred).mean()
+        return y, y_pred
+
+    def validation_step(self, batch, batch_idx):
+        y, y_pred = self._shared_eval_step(batch)
+        loss = self._lossfn(y, y_pred)
         return {"val_loss": loss}
 
     def validation_epoch_end(self, outs):
         avg_loss = torch.stack([x["val_loss"] for x in outs]).mean()
         logs = {"val_loss": avg_loss}
-        self.log("val_epoch_loss", avg_loss)
+        self.log("val_loss_epoch", avg_loss)
         return {"avg_val_loss": avg_loss, "log": logs}
+
+    def test_step(self, batch, batch_idx):
+        y, y_pred = self._shared_eval_step(batch)
+        loss = self._lossfn(y, y_pred)
+        return {"test_loss": loss}
+
+    def test_epoch_end(self, outs):
+        avg_loss = torch.stack([x["test_loss"] for x in outs]).mean()
+        logs = {"test_loss": avg_loss}
+        self.log("test_loss_epoch", avg_loss)
+        return {"avg_test_loss": avg_loss, "log": logs}
+
+    def predict_step(self, batch, batch_idx):
+        y, y_pred = self._shared_eval_step(batch)
+        return y_pred

@@ -76,6 +76,7 @@ class AudioDataModule(pl.LightningDataModule):
 
     def predict_dataloader(self):
         assert (self.df_predict is not None)
+        ## TODO: need a Dataset to return consecutive audio blocks
         pred_set = AudioDataset(self.df_predict, cfg=self.cfg)
         return DataLoader(pred_set, batch_size=self.batch_size)
 

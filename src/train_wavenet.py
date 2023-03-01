@@ -1,5 +1,6 @@
 import hydra
 import os
+import mlflow
 import pytorch_lightning as pl
 from pathlib import Path
 from omegaconf import DictConfig
@@ -19,6 +20,8 @@ def main(cfg: DictConfig):
                                batch_size=batch_size)
 
     wavenet_model = WaveNet_PL(cfg)
+
+    mlflow.pytorch.autolog()
 
     if cfg.training.use_checkpoint_callback:
         checkpoint_callback = ModelCheckpoint(
@@ -53,7 +56,7 @@ def main(cfg: DictConfig):
                 ckpt_path=ckpt_path,
     )
 
-    save_model_path = Path(cfg.training.model_checkpoint_path) / (cfg.training.experiment_name + 'ckpt')
+    save_model_path = Path(cfg.training.model_checkpoint_path) / (cfg.training.experiment_name + '.ckpt')
     trainer.save_checkpoint(save_model_path)
 
 

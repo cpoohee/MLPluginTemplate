@@ -4,13 +4,15 @@ max_epochs: 1000
 check_val_every_n_epoch: 10
 accelerator: mps # "cpu", "gpu", "tpu", "ipu", "auto"
 
+lossfn: 'error_to_signal'
+
 experiment_name: 'wavenet'
 
 resume_checkpoint: false
-checkpoint_file: ''
+checkpoint_file: './outputs/2023-03-02/05-59-33/models/wavenet.ckpt'
 
 use_checkpoint_callback: true
-model_checkpoint_path: './models'
+model_checkpoint_path: './models/'
 
 use_mlflow: true
 tracking_uri: './ml-runs'
