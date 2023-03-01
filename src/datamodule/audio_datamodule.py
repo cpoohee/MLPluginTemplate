@@ -67,17 +67,17 @@ class AudioDataModule(pl.LightningDataModule):
     def val_dataloader(self):
         assert (self.df_val is not None)
         val_set = AudioDataset(self.df_val, cfg=self.cfg)
-        return AudioDataset(val_set, batch_size=self.batch_size)
+        return DataLoader(val_set, batch_size=self.batch_size)
 
     def test_dataloader(self):
         assert (self.df_test is not None)
         test_set = AudioDataset(self.df_test, cfg=self.cfg)
-        return AudioDataset(test_set, batch_size=self.batch_size)
+        return DataLoader(test_set, batch_size=self.batch_size)
 
     def predict_dataloader(self):
         assert (self.df_predict is not None)
         pred_set = AudioDataset(self.df_predict, cfg=self.cfg)
-        return AudioDataset(pred_set, batch_size=self.batch_size)
+        return DataLoader(pred_set, batch_size=self.batch_size)
 
     def teardown(self, stage: str):
         # Used to clean-up when the run is finished
