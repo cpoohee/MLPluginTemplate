@@ -2,21 +2,21 @@
 ## common augmentations on both x and y
 #######################################
 
-do_gain: true
+do_gain: false
 min_gain_in_db: -6.0
 max_gain_in_db: 0.0
 gain_p: 0.5
 
-do_polarity_inv: true
+do_polarity_inv: false
 polarity_p: 0.5
 
-do_pitchshift: true
+do_pitchshift: false
 # in seconds
 min_transpose_semitones: -4.0
 max_transpose_semitones: +4.0
 pitchshift_p: 0.5
 
-do_colored_noise: true
+do_colored_noise: false
 min_snr_in_db: 20.0
 max_snr_in_db: 30.0
 min_f_decay: -2.0
@@ -26,18 +26,18 @@ colored_noise_p: 0.3
 #######################################
 ## independent augmentations on x and y
 #######################################
-do_gain_indep: true
+do_gain_indep: false
 min_gain_in_db_indep: -0.5
 max_gain_in_db_indep: +0.5
 gain_p_indep: 0.9
 
-do_timeshift_indep: true
+do_timeshift_indep: false
 # in seconds
 min_shift_indep: -0.02
 max_shift_indep: +0.02
 timeshift_p_indep: 0.9
 
-do_pitchshift_indep: true
+do_pitchshift_indep: false
 min_transpose_semitones_indep: -0.05
 max_transpose_semitones_indep: +0.05
 pitchshift_p_indep: 0.9
