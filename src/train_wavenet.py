@@ -59,6 +59,12 @@ def main(cfg: DictConfig):
     save_model_path = Path(cfg.training.model_checkpoint_path) / (cfg.training.experiment_name + '.ckpt')
     trainer.save_checkpoint(save_model_path)
 
+    if cfg.training.continue_test:
+        dm_test = AudioDataModule(data_dir=(cur_path / data_path),
+                                   cfg=cfg,
+                                   batch_size=batch_size)
+        trainer.test(wavenet_model, dataloaders=dm_test)
+
 
 if __name__ == "__main__":
     main()

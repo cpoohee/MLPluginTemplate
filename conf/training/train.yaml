@@ -3,6 +3,7 @@ learning_rate: 0.0003
 max_epochs: 1000
 check_val_every_n_epoch: 10
 accelerator: mps # "cpu", "gpu", "tpu", "ipu", "auto"
+continue_test: true
 
 lossfn: 'error_to_signal'
 

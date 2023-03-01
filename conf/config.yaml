@@ -4,4 +4,5 @@ defaults:
   - augmentations: augmentation_root
   - dataset: nus
   - training: train
+  - testing: test
   - model: wavenet
