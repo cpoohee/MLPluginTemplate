@@ -62,8 +62,34 @@ class Losses(torch.nn.Module):
 
         elif loss_type == 'SDSDRLoss':
             self.loss = auraloss.time.SDSDRLoss()
+
+        elif loss_type == 'MSELoss':
+            self.loss = torch.nn.MSELoss()
+
+        elif loss_type == 'DC_SDSDR_SNR_Loss':
+            self.lossDC = auraloss.time.DCLoss()
+            self.lossSDSDR = auraloss.time.SDSDRLoss()
+            self.lossSNR = auraloss.time.SNRLoss()
+
+        elif loss_type == 'ESR_DC_Loss':
+            self.lossDC = auraloss.time.DCLoss()
+            self.lossESR = auraloss.time.ESRLoss()
+
         else:
             assert False
 
     def forward(self, input, target):
+        if self.loss_type == 'DC_SDSDR_SNR_Loss':
+            lossDC = self.lossDC(input, target)
+            lossSDSDR = self.lossSDSDR(input, target)
+            lossSNR = self.lossSNR(input, target)
+            loss = lossDC * 10000.0 + lossSDSDR + lossSNR * 10.0 # loss weighting but chosen from experiments
+            return loss
+
+        if self.loss_type == 'ESR_DC_Loss':
+            lossDC = self.lossDC(input, target)
+            lossESR = self.lossESR(input, target)
+            loss = lossDC * 1000.0 + lossESR # loss weighting but chosen from experiments
+            return loss
+
         return self.loss(input, target)

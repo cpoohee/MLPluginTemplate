@@ -39,7 +39,7 @@ def main(cfg: DictConfig):
     for y, pred in results:
         print('pred')
         play_tensor(pred[0])
-        print('orginal')
+        print('original')
         play_tensor(y[0])
 
 def play_tensor(tensor_sample, sample_rate=44100):
