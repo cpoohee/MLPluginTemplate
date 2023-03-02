@@ -83,7 +83,7 @@ class Losses(torch.nn.Module):
             lossDC = self.lossDC(input, target)
             lossSDSDR = self.lossSDSDR(input, target)
             lossSNR = self.lossSNR(input, target)
-            loss = lossDC * 10000.0 + lossSDSDR + lossSNR * 10.0 # loss weighting but chosen from experiments
+            loss = lossDC * 10000.0 + lossSDSDR + lossSNR # loss weighting but chosen from experiments
             return loss
 
         if self.loss_type == 'ESR_DC_Loss':
