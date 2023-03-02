@@ -77,9 +77,27 @@ Lastly, the model should be small and performant enough to run in a plugin.
 
 # ToDos
 - Create a simple JUCE plugin without AI as a start. (done)
-- Search good quality datasets, do preprocessing
+- Search good quality datasets, do preprocessing (done)
+- prepare possible augmentations (done)
+- create the basic wavenet (done)
+- investigate loss functions (done)
+  - checked out ESR, DC, LogCosh, SNR, SDSDR, MSE
+  - quick training suggest each have its own weakness see results.xlsx in models
+  - sticking to weighted combination of DC SNR SDSDR after it sounds the most natural 
+- train a decent model without bells and whistles, etc augmentation. just able to produce identity sound will do.
 - create a pipeline of model deployment into JUCE
+  - convert model to ONNX,
+  - in JUCE, use ONNX runtime in c++
 - Iterate experiments. 
+  - check out STFT based loss functions, already part of auraloss
+  - check U wave net. 
+  - Intending to used embedding layer to train model to respond differently to a selection of index.
+    - like style0, style1,... will output slightly different audio
+    - will try it on u wave net, where we can play around with the bottleneck
+- prepare a video demo
+
+# Stretched ToDos
+- download and extract free multitracks that contains vocal doubles, use it to train/ fine-tune the model
 
 # Datasets
 - NUS-48E
