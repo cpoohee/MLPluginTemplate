@@ -5,9 +5,11 @@ check_val_every_n_epoch: 10
 accelerator: mps # "cpu", "gpu", "tpu", "ipu", "auto"
 continue_test: true
 
-lossfn: 'error_to_signal'
+lossfn: 'SDSDRLoss'
+loss_preemphasis_filter: true
+loss_preemphasis_coeff: 0.85
 
-experiment_name: 'wavenet_10'
+experiment_name: 'wavenet_e2s2'
 
 resume_checkpoint: false
 checkpoint_file: './outputs/2023-03-02/05-59-33/models/wavenet.ckpt'

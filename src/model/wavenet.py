@@ -1,9 +1,11 @@
 # Adapted from https://github.com/GuitarML/PedalNetRT/blob/master/model.py
 
 import torch
+import auraloss
 import torch.nn as nn
 import pytorch_lightning as pl
 from omegaconf import DictConfig
+from auraloss.utils import apply_reduction
 
 
 class CausalConv1d(torch.nn.Conv1d):
@@ -92,17 +94,41 @@ class WaveNet(nn.Module):
         return out
 
 
-def error_to_signal(y, y_pred):
-    """
-    Error to signal ratio with pre-emphasis filter:
-    https://www.mdpi.com/2076-3417/10/3/766/htm
-    """
-    y, y_pred = pre_emphasis_filter(y), pre_emphasis_filter(y_pred)
-    return (y - y_pred).pow(2).sum(dim=2) / (y.pow(2).sum(dim=2) + 1e-10)
+# def error_to_signal(y, y_pred):
+#     """
+#     Error to signal ratio with pre-emphasis filter:
+#     https://www.mdpi.com/2076-3417/10/3/766/htm
+#     """
+#     y, y_pred = pre_emphasis_filter(y), pre_emphasis_filter(y_pred)
+#     return (y - y_pred).pow(2).sum(dim=2) / (y.pow(2).sum(dim=2) + 1e-10)
+#
+#
+# def pre_emphasis_filter(x, coeff=0.95):
+#     return torch.cat((x[:, :, 0:1], x[:, :, 1:] - coeff * x[:, :, :-1]), dim=2)
 
 
-def pre_emphasis_filter(x, coeff=0.95):
-    return torch.cat((x[:, :, 0:1], x[:, :, 1:] - coeff * x[:, :, :-1]), dim=2)
+class ESRLossORG(torch.nn.Module):
+    """
+    Re-writing the original loss function as auroloss based module
+    """
+
+    def __init__(self, coeff=0.95, reduction='mean'):
+        super(ESRLossORG, self).__init__()
+        self.coeff = coeff
+        self.reduction = reduction
+
+    def forward(self, input, target):
+        """
+        the original loss has 1e-10 in the divisor for preventing div by zero
+        """
+        y = self.pre_emphasis_filter(input, self.coeff)
+        y_pred = self.pre_emphasis_filter(target, self.coeff)
+        losses = (y - y_pred).pow(2).sum(dim=2) / (y.pow(2).sum(dim=2) + 1e-10)
+        losses = apply_reduction(losses, reduction=self.reduction)
+        return losses
+
+    def pre_emphasis_filter(self, x, coeff):
+        return torch.cat((x[:, :, 0:1], x[:, :, 1:] - coeff * x[:, :, :-1]), dim=2)
 
 
 class WaveNet_PL(pl.LightningModule):
@@ -117,6 +143,37 @@ class WaveNet_PL(pl.LightningModule):
         self.lr = cfg.training.learning_rate
         self.lossfn = cfg.training.lossfn
         self.cfg = cfg
+
+        self.loss_preemphasis_filter = cfg.training.loss_preemphasis_filter
+        self.loss_preemphasis_coeff = cfg.training.loss_preemphasis_coeff
+
+        """
+        see types of losses
+        https://github.com/csteinmetz1/auraloss
+        """
+
+        if cfg.training.lossfn == 'error_to_signal':
+            self.ESRLoss = ESRLossORG()
+
+        if cfg.training.lossfn == 'ESRLoss':
+            self.ESRLoss = auraloss.time.ESRLoss()
+
+        if cfg.training.lossfn == 'DCLoss':
+            self.DCLoss = auraloss.time.DCLoss()
+
+        if cfg.training.lossfn == 'LogCoshLoss':
+            self.LogCoshLoss = auraloss.time.LogCoshLoss()
+
+        if cfg.training.lossfn == 'SNRLoss':
+            self.SNRLoss = auraloss.time.SNRLoss()
+
+        if cfg.training.lossfn == 'SDSDRLoss':
+            self.SDSDRLoss = auraloss.time.SDSDRLoss()
+
+        if self.loss_preemphasis_filter:
+            self.fir_filter = auraloss.perceptual.FIRFilter(coef=self.loss_preemphasis_coeff,
+                                                            filter_type='hp')
+
         self.save_hyperparameters()
 
     def configure_optimizers(self):
@@ -125,16 +182,31 @@ class WaveNet_PL(pl.LightningModule):
     def forward(self, x):
         return self.wavenet(x)
 
+    def _lossfn(self, y, y_pred):
+        if self.loss_preemphasis_filter:
+            y, y_pred = self.fir_filter(y, y_pred)
+
+        if self.lossfn == 'error_to_signal' or self.lossfn == 'ESRLoss':
+            return self.ESRLoss(y, y_pred)
+
+        if self.lossfn == 'DCLoss':
+            return self.DCLoss(y, y_pred)
+
+        if self.lossfn == 'LogCoshLoss':
+            return self.LogCoshLoss(y, y_pred)
+
+        if self.lossfn == 'SNRLoss':
+            return self.SNRLoss(y, y_pred)
+
+        if self.lossfn == 'SDSDRLoss':
+            return self.SDSDRLoss(y, y_pred)
+
     def training_step(self, batch, batch_idx):
         y, y_pred = self._shared_eval_step(batch)
-        loss = error_to_signal(y[:, :, -y_pred.size(2):], y_pred).mean()
+        loss = self._lossfn(y, y_pred)
         logs = {"loss": loss}
         self.log("train_loss", loss, on_epoch=True, on_step=False)
         return {"loss": loss, "log": logs}
-
-    def _lossfn(self, y, y_pred):
-        if self.lossfn == 'error_to_signal':
-            return error_to_signal(y[:, :, -y_pred.size(2):], y_pred).mean()
 
     def _shared_eval_step(self, batch):
         x, y = batch
