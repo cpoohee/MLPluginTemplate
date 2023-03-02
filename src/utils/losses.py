@@ -28,14 +28,23 @@ class ESRLossORG(torch.nn.Module):
 
 
 class PreEmphasisFilter(torch.nn.Module):
-    def __init__(self, coeff=0.95):
+    def __init__(self, coeff=0.95, type= 'hp', fs=44100):
         super(PreEmphasisFilter, self).__init__()
         self.coeff = coeff
+        self.type = type
+
+        if self.type == 'aw':
+            self.aw = auraloss.perceptual.FIRFilter(filter_type="aw", fs=fs)
 
     def forward(self, input, target):
-        y = self.pre_emphasis_filter(input, self.coeff)
-        y_pred = self.pre_emphasis_filter(target, self.coeff)
-        return y, y_pred
+        if self.type == 'hp':
+            y = self.pre_emphasis_filter(input, self.coeff)
+            y_pred = self.pre_emphasis_filter(target, self.coeff)
+            return y, y_pred
+
+        elif self.type == 'aw':
+            y, y_pred = self.aw(input, target)
+            return y, y_pred
 
     def pre_emphasis_filter(self, x, coeff):
         return torch.cat((x[:, :, 0:1], x[:, :, 1:] - coeff * x[:, :, :-1]), dim=2)

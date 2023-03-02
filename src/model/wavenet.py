@@ -108,8 +108,9 @@ class WaveNet_PL(pl.LightningModule):
         self.lossfn = cfg.training.lossfn
         self.cfg = cfg
 
-        self.loss_preemphasis_filter = cfg.training.loss_preemphasis_filter
-        self.loss_preemphasis_coeff = cfg.training.loss_preemphasis_coeff
+        self.loss_preemphasis_hp_filter = cfg.training.loss_preemphasis_hp_filter
+        self.loss_preemphasis_hp_coeff = cfg.training.loss_preemphasis_hp_coeff
+        self.loss_preemphasis_aw_filter = cfg.training.loss_preemphasis_aw_filter
 
         """
         see types of losses
@@ -117,8 +118,11 @@ class WaveNet_PL(pl.LightningModule):
         """
         self.loss = Losses(loss_type=cfg.training.lossfn)
 
-        if self.loss_preemphasis_filter:
-            self.fir_filter = PreEmphasisFilter(coeff=self.loss_preemphasis_coeff)
+        if self.loss_preemphasis_hp_filter:
+            self.fir_filter = PreEmphasisFilter(coeff=self.loss_preemphasis_hp_coeff)
+
+        if self.loss_preemphasis_aw_filter:
+            self.aw_filter = PreEmphasisFilter(type='aw')
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.wavenet.parameters(), lr=self.lr)
@@ -127,8 +131,12 @@ class WaveNet_PL(pl.LightningModule):
         return self.wavenet(x)
 
     def _lossfn(self, y, y_pred):
-        if self.loss_preemphasis_filter:
+        if self.loss_preemphasis_hp_filter:
             y, y_pred = self.fir_filter(y, y_pred)
+
+        if self.loss_preemphasis_aw_filter:
+            y, y_pred = self.aw_filter(y, y_pred)
+
         return self.loss(y, y_pred)
 
     def training_step(self, batch, batch_idx):
