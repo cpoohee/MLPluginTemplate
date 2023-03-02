@@ -6,7 +6,7 @@ accelerator: mps # "cpu", "gpu", "tpu", "ipu", "auto"
 continue_test: true
 
 lossfn: 'DC_SDSDR_SNR_Loss' # error_to_signal, ESRLoss, DCLoss, LogCoshLoss, SNRLoss, SDSDRLoss, MSELoss, DC_SDSDR_SNR_Loss
-loss_preemphasis_filter: true
+loss_preemphasis_filter: false
 loss_preemphasis_coeff: 0.95
 
 experiment_name: 'wavenet_DC_SDSDR_SNR_Loss'
