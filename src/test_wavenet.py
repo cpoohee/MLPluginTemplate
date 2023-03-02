@@ -1,6 +1,7 @@
 import hydra
 import os
 import mlflow
+import simpleaudio as sa
 import pytorch_lightning as pl
 from pathlib import Path
 from omegaconf import DictConfig
@@ -17,6 +18,9 @@ def main(cfg: DictConfig):
     dm_test = AudioDataModule(data_dir=(cur_path / data_path),
                                cfg=cfg,
                                batch_size=batch_size)
+    dm_pred = AudioDataModule(data_dir=(cur_path / data_path),
+                              cfg=cfg,
+                              batch_size=1)
 
     mlflow.pytorch.autolog()
 
@@ -29,6 +33,19 @@ def main(cfg: DictConfig):
     trainer = pl.Trainer()
 
     trainer.test(wavenet_model, dataloaders=dm_test)
+
+    results = trainer.predict(wavenet_model, dataloaders=dm_pred)
+
+    for y, pred in results:
+        print('pred')
+        play_tensor(pred[0])
+        print('orginal')
+        play_tensor(y[0])
+
+def play_tensor(tensor_sample, sample_rate=44100):
+    numpy_sample = tensor_sample.numpy()
+    play_obj = sa.play_buffer(numpy_sample, 1, 4, sample_rate=sample_rate)
+    play_obj.wait_done()
 
 
 if __name__ == "__main__":

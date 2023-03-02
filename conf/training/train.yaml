@@ -1,13 +1,13 @@
 batch_size: 64
 learning_rate: 0.0003
-max_epochs: 1000
+max_epochs: 10
 check_val_every_n_epoch: 10
 accelerator: mps # "cpu", "gpu", "tpu", "ipu", "auto"
 continue_test: true
 
 lossfn: 'error_to_signal'
 
-experiment_name: 'wavenet'
+experiment_name: 'wavenet_10'
 
 resume_checkpoint: false
 checkpoint_file: './outputs/2023-03-02/05-59-33/models/wavenet.ckpt'

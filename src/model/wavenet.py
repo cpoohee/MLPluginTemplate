@@ -165,4 +165,4 @@ class WaveNet_PL(pl.LightningModule):
 
     def predict_step(self, batch, batch_idx):
         y, y_pred = self._shared_eval_step(batch)
-        return y_pred
+        return y, y_pred
