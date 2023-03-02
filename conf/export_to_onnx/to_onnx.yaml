@@ -1,5 +1,5 @@
 checkpoint_file: './outputs/2023-03-03/00-56-17/models/wavenet_DC_SDSDR_SNR_Loss.ckpt'
 model: 'wavenet'
 
-export_filename: 'test.onnx'
+export_filename: './model/onnx/test.onnx'
 sample_block_size: 1024 # check dataset blocksize during training, it should be matching
