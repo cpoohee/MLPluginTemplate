@@ -6,3 +6,4 @@ defaults:
   - training: train
   - testing: test
   - model: wavenet
+  - export_to_onnx: to_onnx
