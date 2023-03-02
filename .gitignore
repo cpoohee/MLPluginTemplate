@@ -5,3 +5,4 @@
 tests/.pytest_cache
 /lightning_logs
 /models/*
+!/models/onnx/
