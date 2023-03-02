@@ -1,2 +1,4 @@
-lossfn: 'error_to_signal'
-checkpoint_file: './models/wavenet_10_noaug.ckpt'
+lossfn: 'LogCoshLoss'
+checkpoint_file: './outputs/2023-03-02/21-41-00/models/wavenet_LogCoshLoss.ckpt'
+
+accelerator: mps # "cpu", "gpu", "tpu", "ipu", "auto"

@@ -30,7 +30,7 @@ def main(cfg: DictConfig):
 
     wavenet_model = WaveNet_PL.load_from_checkpoint(cur_path/Path(ckpt_path))
 
-    trainer = pl.Trainer()
+    trainer = pl.Trainer(accelerator=cfg.testing.accelerator,)
 
     trainer.test(wavenet_model, dataloaders=dm_test)
 
