@@ -6,6 +6,7 @@ import pandas as pd
 from pathlib import Path
 from omegaconf import DictConfig
 from src.datamodule.audio_dataloader import AudioDataset
+from src.datamodule.audio_dataloader_pred import AudioDatasetPred
 from torch.utils.data import DataLoader
 
 class AudioDataModule(pl.LightningDataModule):
@@ -26,7 +27,8 @@ class AudioDataModule(pl.LightningDataModule):
         if stage == "test":
             self.df_test = self.form_dataframe(self.data_dir / 'test')
         if stage == "predict":
-            self.df_predict = self.form_dataframe(self.data_dir / 'test_full')
+            # self.df_predict = self.form_dataframe(self.data_dir / 'test')
+            self.df_predict = self.form_dataframe(self.data_dir / 'predict')
 
     def form_dataframe(self, data_path):
         data_path_x = data_path / 'x'
@@ -76,8 +78,7 @@ class AudioDataModule(pl.LightningDataModule):
 
     def predict_dataloader(self):
         assert (self.df_predict is not None)
-        ## TODO: need a Dataset to return consecutive audio blocks
-        pred_set = AudioDataset(self.df_predict, cfg=self.cfg)
+        pred_set = AudioDatasetPred(self.df_predict, cfg=self.cfg)
         return DataLoader(pred_set, batch_size=self.batch_size)
 
     def teardown(self, stage: str):
