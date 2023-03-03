@@ -2,13 +2,21 @@
 
 import os
 import shutil
-from pathlib import Path
 import gdown
 import urllib.request
+import librosa.util
+import soundfile as sf
+from pathlib import Path
 from tqdm import tqdm
 
 
 def main():
+    download_nus48e()
+    download_vocalset()
+    download_vctk()
+
+
+def download_nus48e():
     ## nus 48e
     root_path = Path(os.path.abspath(os.getcwd()))
     nus_raw_path = Path("./data/raw/nus-48e")
@@ -37,7 +45,7 @@ def main():
                 while True:
                     if target_path.exists():
                         target_path = root_path / nus_interim_path / (
-                                    file_path.stem + '_' + str(i) + file_path.suffix)
+                                file_path.stem + '_' + str(i) + file_path.suffix)
                         i += 1
                         continue
                     else:
@@ -46,6 +54,9 @@ def main():
     else:
         print("NUS48-E interim folder existed")
 
+
+def download_vocalset():
+    root_path = Path(os.path.abspath(os.getcwd()))
     ## vocalset
     vocalset_raw_path = Path("./data/raw/vocalset")
     vocalset_interim_path = Path("./data/interim/vocalset")
@@ -69,7 +80,8 @@ def main():
         Path.mkdir(root_path / vocalset_interim_path)
 
         # extract zip file
-        shutil.unpack_archive(root_path / vocalset_raw_path / vocalset_filename, root_path / vocalset_raw_path)
+        shutil.unpack_archive(root_path / vocalset_raw_path / vocalset_filename,
+                              root_path / vocalset_raw_path)
 
         # copy extracted wav to interim
         for file_path in Path(vocalset_raw_path_posix).glob('**/*.wav'):
@@ -87,7 +99,7 @@ def main():
             shutil.copy(file_path, target_path)
 
         # delete original extracted files
-        shutil.rmtree(root_path / vocalset_raw_path/ '__MACOSX' );
+        shutil.rmtree(root_path / vocalset_raw_path / '__MACOSX');
         shutil.rmtree(root_path / vocalset_raw_path / 'FULL');
         (root_path / vocalset_raw_path / 'readme-anon.txt').unlink()
         (root_path / vocalset_raw_path / 'test_singers_technique.txt').unlink()
@@ -95,6 +107,71 @@ def main():
         (root_path / vocalset_raw_path / 'DataSetVocalises.pdf').unlink()
     else:
         print("vocalset interim folder existed")
+
+
+def download_vctk():
+    root_path = Path(os.path.abspath(os.getcwd()))
+
+    ## vctk
+    vctk_raw_path = Path("./data/raw/vctk")
+    vctk_interim_path = Path("./data/interim/vctk")
+    vctk_raw_path_posix = (root_path / vctk_raw_path).as_posix()
+    vctk_filename = "DS_10283_3443.zip"
+
+    # download vctk
+    if not (root_path / vctk_raw_path).exists():
+        print("Creating vctk folder")
+        Path.mkdir(root_path / vctk_raw_path)
+        vctk_link = 'https://datashare.ed.ac.uk/download/DS_10283_3443.zip'
+        download_url(vctk_link, (root_path / vctk_raw_path / vctk_filename).as_posix())
+    else:
+        print("vctk folder existed")
+
+    ## move vctk folder to interim
+    if not (root_path / vctk_interim_path).exists():
+        print("Creating vctk interim folder")
+        Path.mkdir(root_path / vctk_interim_path)
+
+        vctk_raw_zip_path = root_path / vctk_raw_path / Path("./VCTK-Corpus-0.92.zip")
+        if not vctk_raw_zip_path.exists():
+            # extract zip file
+            shutil.unpack_archive(root_path / vctk_raw_path / vctk_filename,
+                                  root_path / vctk_raw_path)
+
+        if not (root_path / vctk_raw_path / Path('./wav48_silence_trimmed')).exists():
+            shutil.unpack_archive(vctk_raw_zip_path,
+                                  root_path / vctk_raw_path)
+
+        flac_files = librosa.util.find_files(root_path / vctk_raw_path, ext='flac')
+
+        # copy extracted flac to wav to interim
+        for file_path in tqdm(flac_files):
+            # send all of this dataset's spoken files
+            file_path = Path (file_path)
+            target_path = root_path / vctk_interim_path / file_path.name
+            i = 1
+            while True:
+                if target_path.exists():
+                    target_path = root_path / vctk_interim_path / (
+                            file_path.stem + '_' + str(i) + file_path.suffix)
+                    i += 1
+                    continue
+                else:
+                    break
+            data, sr = librosa.load(file_path)
+            sf.write(target_path.with_suffix('.wav'), data, sr, subtype='PCM_16')
+
+        # delete original extracted files
+        shutil.rmtree(root_path / vctk_raw_path / 'txt');
+        shutil.rmtree(root_path / vctk_raw_path / 'wav48_silence_trimmed');
+        (root_path / vctk_raw_path / 'license_text').unlink()
+        (root_path / vctk_raw_path / 'README.txt').unlink()
+        (root_path / vctk_raw_path / 'speaker-info.txt').unlink()
+        (root_path / vctk_raw_path / 'update.txt').unlink()
+        (root_path / vctk_raw_path / 'VCTK-Corpus-0.92.zip').unlink()
+
+    else:
+        print("vctk interim folder existed")
 
 
 class DownloadProgressBar(tqdm):

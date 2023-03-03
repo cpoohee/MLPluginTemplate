@@ -9,10 +9,10 @@ lossfn: 'DC_SDSDR_SNR_Loss' # error_to_signal, ESRLoss, DCLoss, LogCoshLoss, SNR
 loss_preemphasis_hp_filter: false
 loss_preemphasis_hp_coeff: 0.95
 
-loss_preemphasis_aw_filter: true
+loss_preemphasis_aw_filter: false
 
 
-experiment_name: 'wavenet_aw_DC_SDSDR_SNR_Loss'
+experiment_name: 'wavenet_DC_SDSDR_SNR_Loss'
 
 resume_checkpoint: false
 checkpoint_file: './outputs/2023-03-02/05-59-33/models/wavenet.ckpt'
