@@ -135,7 +135,7 @@ def process_audio(target_path, audio_paths_X, audio_paths_Y,
 
             if len(x_silence) == 0 or len(y_silence) == 0:
                 # do not save as it is empty.
-                break
+                continue
 
             # recombine
             x = AudioSegment.empty()
