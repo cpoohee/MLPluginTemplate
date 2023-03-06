@@ -27,7 +27,6 @@ class AudioDataModule(pl.LightningDataModule):
         if stage == "test":
             self.df_test = self.form_dataframe(self.data_dir / 'test')
         if stage == "predict":
-            # self.df_predict = self.form_dataframe(self.data_dir / 'test')
             self.df_predict = self.form_dataframe(self.data_dir / 'predict')
 
     def form_dataframe(self, data_path):

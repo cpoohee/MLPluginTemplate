@@ -58,6 +58,8 @@ class AudioDataset(Dataset):
         self.max_transpose_semitones_indep = cfg.augmentations.max_transpose_semitones_indep
         self.pitchshift_p_indep = cfg.augmentations.pitchshift_p_indep
 
+        #self.device = cfg.training.accelerator
+
         self.__initialise_augmentations()
 
     def __initialise_augmentations(self):
@@ -163,6 +165,14 @@ class AudioDataset(Dataset):
         waveform_x = torch.unsqueeze(waveform_x, dim=0)
         waveform_y = torch.unsqueeze(waveform_y, dim=0)
         waveform = torch.cat((waveform_x, waveform_y), 0)
+
+        # still faster in cpu than accelerator.. so we disable it, furthermore, mps still do not work for many augmentations.
+        # if self.device == 'mps':
+        #     mpsdevice = torch.device('mps')
+        #     waveform = waveform.to(mpsdevice)
+        # elif self.device == 'gpu':
+        #     gpudevice = torch.device('gpu')
+        #     waveform = waveform.to(gpudevice)
 
         if self.do_augmentation:
             # do augmentations that we want to affect on both x and y

@@ -2,6 +2,8 @@ import hydra
 import os
 import simpleaudio as sa
 from pathlib import Path
+
+import torch
 from omegaconf import DictConfig
 from src.datamodule.audio_datamodule import AudioDataModule
 
@@ -25,6 +27,8 @@ def main(cfg: DictConfig):
 
 
 def play_tensor(tensor_sample, sample_rate=44100):
+    cpudevice = torch.device('cpu')
+    tensor_sample = tensor_sample.to(cpudevice)
     numpy_sample = tensor_sample.numpy()
     play_obj = sa.play_buffer(numpy_sample, 1, 4, sample_rate=sample_rate)
     play_obj.wait_done()
