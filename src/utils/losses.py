@@ -54,6 +54,8 @@ class Losses(torch.nn.Module):
     def __init__(self, loss_type='error_to_signal'):
         super(Losses, self).__init__()
         self.loss_type = loss_type
+
+        # time domain
         if loss_type == 'error_to_signal':
             self.loss = ESRLossORG()
 
@@ -75,6 +77,17 @@ class Losses(torch.nn.Module):
         elif loss_type == 'MSELoss':
             self.loss = torch.nn.MSELoss()
 
+        # frequency domain
+        elif loss_type == 'STFTLoss':
+            self.loss = auraloss.freq.STFTLoss(device=torch.device("cpu"));
+
+        elif loss_type == 'MultiResolutionSTFTLoss':
+            self.loss = auraloss.freq.MultiResolutionSTFTLoss(device=torch.device("cpu"));
+
+        elif loss_type == 'RandomResolutionSTFTLoss':
+            self.loss = auraloss.freq.RandomResolutionSTFTLoss(device=torch.device("cpu"));
+
+        # combination losses
         elif loss_type == 'DC_SDSDR_SNR_Loss':
             self.lossDC = auraloss.time.DCLoss()
             self.lossSDSDR = auraloss.time.SDSDRLoss()
@@ -100,5 +113,14 @@ class Losses(torch.nn.Module):
             lossESR = self.lossESR(input, target)
             loss = lossDC * 1000.0 + lossESR # loss weighting but chosen from experiments
             return loss
+
+        if self.loss_type == 'STFTLoss' or \
+                self.loss_type == 'MultiResolutionSTFTLoss' or \
+                self.loss_type == 'RandomResolutionSTFTLoss':
+            # mps is not able to process complex types in stft, fall back to cpu
+            cpudevice = torch.device('cpu')
+            input_cpu = input.to(cpudevice)
+            target_cpu = target.to(cpudevice)
+            return self.loss(input_cpu, target_cpu)
 
         return self.loss(input, target)

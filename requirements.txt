@@ -21,3 +21,4 @@ seaborn
 librosa
 matplotlib
 pytest
+# additional libsndfile library needed to be installed in the system, try brew install libsndfile

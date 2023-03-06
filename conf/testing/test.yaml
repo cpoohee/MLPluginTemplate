@@ -1,4 +1,4 @@
 lossfn: 'DC_SDSDR_SNR_Loss'
-checkpoint_file: './outputs/2023-03-03/04-34-10/models/wavenet_aw_DC_SDSDR_SNR_Loss.ckpt'
+checkpoint_file: './models/wavenet_aw_DC_SDSDR_SNR_Loss.ckpt'
 
 accelerator: mps # "cpu", "gpu", "tpu", "ipu", "auto"
