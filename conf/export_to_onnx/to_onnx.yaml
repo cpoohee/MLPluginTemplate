@@ -1,5 +1,5 @@
-checkpoint_file: './models/wavenet_aw_DC_SDSDR_SNR_Loss.ckpt'
+checkpoint_file: './models/wavenet_MultiResolutionSTFTLoss.ckpt'
 model: 'wavenet'
 
-export_filename: './models/onnx/aw_wavenet.onnx'
+export_filename: './models/onnx/mrstft_wavenet.onnx'
 sample_block_size: 1024 # check dataset blocksize during training, it should be matching
