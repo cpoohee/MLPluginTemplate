@@ -1,4 +1,4 @@
-lossfn: 'MelSTFTLoss'
-checkpoint_file: './outputs/2023-03-06/19-46-57/models/wavenet_STFTLoss.ckpt'
+lossfn: 'MultiResolutionSTFTLoss'
+checkpoint_file: './outputs/2023-03-07/04-29-05/models/waveUnet_MultiResolutionSTFTLoss.ckpt'
 
 accelerator: mps # "cpu", "gpu", "tpu", "ipu", "auto"

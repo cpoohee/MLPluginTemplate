@@ -188,4 +188,17 @@ class AudioDataset(Dataset):
         waveform_x = waveform[0]
         waveform_y = waveform[1]
 
+        # do padding if random block cuts the sample length
+        length_x = waveform_x.size(dim=1)
+        if length_x < self.block_size:
+            waveform_x = torch.nn.functional.pad(waveform_x,
+                                                 (1, self.block_size - length_x - 1),
+                                                 "constant", 0)
+
+        length_y = waveform_y.size(dim=1)
+        if length_y < self.block_size:
+            waveform_y = torch.nn.functional.pad(waveform_y,
+                                                 (1, self.block_size - length_y - 1),
+                                                 "constant", 0)
+
         return waveform_x, waveform_y
