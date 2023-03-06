@@ -30,22 +30,34 @@ def main(cfg: DictConfig):
 
     input_names = ["input1"]
     output_names = ["output1"]
+    dynamic_axes = {
+        "input1": {2: 'blocksize'},
+        "output1": {2: 'blocksize'}
+    }
 
     torch.onnx.export(
         torch_model,
         dummy_input,
         onnx_filename,
         input_names=input_names,
-        output_names=output_names
+        output_names=output_names,
+        dynamic_axes=dynamic_axes
     )
+    print("saved: " + onnx_filename)
 
     onnx_model = onnx.load(onnx_filename)
     onnx.checker.check_model(onnx_model)
 
+    print("test with expected blocksize")
     test_onnx_output(torch_model, onnx_filename, sample_block_size=sample_block_size)
 
+    print("test with smaller blocksize ")
+    test_onnx_output(torch_model, onnx_filename, sample_block_size=(int)(sample_block_size / 2))
+
+    print("test with larger blocksize")
+    test_onnx_output(torch_model, onnx_filename, sample_block_size=(sample_block_size * 2))
+
     print("Conversion done")
-    print("saved: " + onnx_filename)
 
 
 def test_onnx_output(torch_model, onnx_filename, sample_block_size):
