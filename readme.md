@@ -81,19 +81,25 @@ Lastly, the model should be small and performant enough to run in a plugin.
 - prepare possible augmentations (done)
 - create the basic wavenet (done)
 - investigate loss functions (done)
-  - checked out ESR, DC, LogCosh, SNR, SDSDR, MSE
+  - checked out ESR, DC, LogCosh, SNR, SDSDR, MSE, various stft 
   - quick training suggest each have its own weakness see results.xlsx in models
-  - sticking to weighted combination of DC SNR SDSDR after it sounds the most natural 
-- train a decent model without bells and whistles, etc augmentation. just able to produce identity sound will do.
-- create a pipeline of model deployment into JUCE
-  - convert model to ONNX,
+  - sticking to multi res stft after it sounds the most natural 
+- train a decent model without bells and whistles, etc augmentation. just able to produce identity sound will do. (done)
+- create a pipeline of model deployment into JUCE (done)
+  - convert model to ONNX, 
   - in JUCE, use ONNX runtime in c++
 - Iterate experiments. 
-  - check out STFT based loss functions, already part of auraloss
+  - check out STFT based loss functions, already part of auraloss (done)
   - check U wave net. 
   - Intending to used embedding layer to train model to respond differently to a selection of index.
     - like style0, style1,... will output slightly different audio
     - will try it on u wave net, where we can play around with the bottleneck
+  - Use augmentations 
+  - Increase model size on the small NUS dataset, evaluate usefulness
+  - Full dataset training on finalised model
+- Improve plugin usefulness
+  - UI
+  - Sound, might need tricks to beat the weird bleep during the front of output 
 - prepare a video demo
 
 # Stretched ToDos
@@ -107,12 +113,18 @@ Lastly, the model should be small and performant enough to run in a plugin.
 - VocalSet
   - [Wilkins, Julia, et al. "VocalSet: A Singing Voice Dataset." ISMIR. 2018.](https://zenodo.org/record/1193957#.Y_zvvexBzA0)
 
+- VCTK
+  - [Veaux, Christophe, Junichi Yamagishi, and Kirsten MacDonald. "CSTR VCTK corpus: English multi-speaker corpus for CSTR voice cloning toolkit." University of Edinburgh. The Centre for Speech Technology Research (CSTR) (2017).](https://datashare.ed.ac.uk/handle/10283/3443)
 - more data to come...
 
 # Experiments
 - use a simple wavenet. time based input/output, convert to run in JUCE
 - use a STFT-based input to investigate latency limitation or benefits in natural sounding
 - Decide on method and improve.
+
+# Findings
+- multi res stft loss function creates the most natural sounding generation, tested on basic wavenet
+- melspectrum, any preemphasis also resulted in less natural sounding generation
 
 # Brief description of Source code folder and scripts
 - download_data.py -> downloads dataset into data/raw, then pick the audio and place into data/interim
