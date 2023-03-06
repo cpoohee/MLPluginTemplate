@@ -116,7 +116,7 @@ class WaveNet_PL(pl.LightningModule):
         see types of losses
         https://github.com/csteinmetz1/auraloss
         """
-        self.loss = Losses(loss_type=cfg.training.lossfn)
+        self.loss = Losses(loss_type=cfg.training.lossfn, sample_rate=cfg.dataset.sample_rate)
 
         if self.loss_preemphasis_hp_filter:
             self.fir_filter = PreEmphasisFilter(coeff=self.loss_preemphasis_hp_coeff)

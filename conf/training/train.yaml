@@ -5,14 +5,14 @@ check_val_every_n_epoch: 10
 accelerator: mps # "cpu", "gpu", "tpu", "ipu", "auto"
 continue_test: true
 
-lossfn: 'STFTLoss' # error_to_signal, ESRLoss, DCLoss, LogCoshLoss, SNRLoss, SDSDRLoss, MSELoss, DC_SDSDR_SNR_Loss, STFTLoss, MultiResolutionSTFTLoss, RandomResolutionSTFTLoss
+lossfn: 'STFTLoss' # error_to_signal, ESRLoss, DCLoss, LogCoshLoss, SNRLoss, SDSDRLoss, MSELoss, DC_SDSDR_SNR_Loss, STFTLoss, MelSTFTLoss, MultiResolutionSTFTLoss, RandomResolutionSTFTLoss
 loss_preemphasis_hp_filter: false
 loss_preemphasis_hp_coeff: 0.95
 
-loss_preemphasis_aw_filter: false
+loss_preemphasis_aw_filter: true
 
 
-experiment_name: 'wavenet_STFTLoss'
+experiment_name: 'wavenet_sw_STFTLoss'
 
 resume_checkpoint: false
 checkpoint_file: './outputs/2023-03-02/05-59-33/models/wavenet.ckpt'

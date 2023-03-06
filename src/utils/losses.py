@@ -51,9 +51,10 @@ class PreEmphasisFilter(torch.nn.Module):
 
 
 class Losses(torch.nn.Module):
-    def __init__(self, loss_type='error_to_signal'):
+    def __init__(self, loss_type='error_to_signal', sample_rate='44100'):
         super(Losses, self).__init__()
         self.loss_type = loss_type
+        self.sample_rate = sample_rate
 
         # time domain
         if loss_type == 'error_to_signal':
@@ -79,10 +80,28 @@ class Losses(torch.nn.Module):
 
         # frequency domain
         elif loss_type == 'STFTLoss':
-            self.loss = auraloss.freq.STFTLoss(device=torch.device("cpu"));
+            self.loss = auraloss.freq.STFTLoss(fft_size=4096,
+                                               win_length=4096,
+                                               hop_size=1024,
+                                               w_phs=0.2,
+                                               sample_rate=self.sample_rate,
+                                               device=torch.device("cpu"));
+
+        elif loss_type == 'MelSTFTLoss':
+            self.loss = auraloss.freq.MelSTFTLoss(fft_size=4096,
+                                                  hop_size=1024,
+                                                  n_mels=128,
+                                                  w_phs=0.2,
+                                                  sample_rate=self.sample_rate,
+                                                  device=torch.device("cpu"));
 
         elif loss_type == 'MultiResolutionSTFTLoss':
-            self.loss = auraloss.freq.MultiResolutionSTFTLoss(device=torch.device("cpu"));
+            self.loss = auraloss.freq.MultiResolutionSTFTLoss(
+                fft_sizes=[512, 1024, 2048, 4096],
+                hop_sizes=[50, 120, 240, 480],
+                win_lengths=[512, 1024, 2048, 4096],
+                w_phs=0.2,
+                device=torch.device("cpu"));
 
         elif loss_type == 'RandomResolutionSTFTLoss':
             self.loss = auraloss.freq.RandomResolutionSTFTLoss(device=torch.device("cpu"));
@@ -115,6 +134,7 @@ class Losses(torch.nn.Module):
             return loss
 
         if self.loss_type == 'STFTLoss' or \
+                self.loss_type == 'MelSTFTLoss' or \
                 self.loss_type == 'MultiResolutionSTFTLoss' or \
                 self.loss_type == 'RandomResolutionSTFTLoss':
             # mps is not able to process complex types in stft, fall back to cpu
