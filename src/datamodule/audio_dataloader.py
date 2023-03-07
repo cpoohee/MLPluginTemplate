@@ -63,6 +63,19 @@ class AudioDataset(Dataset):
         self.__initialise_augmentations()
 
     def __initialise_augmentations(self):
+        # optimise augmentation time by doing time sensitive augmentation first,
+        # crop and augment on smaller blocks later
+        transforms = [Identity()]
+
+        if self.aug_timeshift_indep:
+            transforms.append(Shift(min_shift=self.min_shift_indep,
+                                    max_shift=self.max_shift_indep,
+                                    p=self.timeshift_p_indep,
+                                    p_mode='per_example',
+                                    shift_unit='seconds'))
+
+        self.apply_augmentation_before_crop = Compose(transforms)
+
         # include Identity in case no augmentation done, and apply_augmentation will still be valid
         transforms = [Identity()]
 
@@ -101,12 +114,6 @@ class AudioDataset(Dataset):
                                    max_gain_in_db=self.max_gain_in_db_indep,
                                    p=self.gain_p_indep,
                                    p_mode='per_example'))
-        if self.aug_timeshift_indep:
-            transforms.append(Shift(min_shift=self.min_shift_indep,
-                                    max_shift=self.max_shift_indep,
-                                    p=self.timeshift_p_indep,
-                                    p_mode='per_example',
-                                    shift_unit='seconds'))
 
         # micro pitch cannot be done on torch_audiomentation, revert to original audiomentation
         if self.aug_pitchshift_indep:
@@ -126,6 +133,10 @@ class AudioDataset(Dataset):
 
     def __len__(self):
         return len(self.df)
+
+    def __process_augmentations_before_crop(self, waveform):
+        waveform = self.apply_augmentation_before_crop(waveform, sample_rate=self.sample_rate)
+        return waveform
 
     def __process_augmentations_combo(self, waveform):
         # conduct more augmentations,
@@ -174,16 +185,21 @@ class AudioDataset(Dataset):
         #     gpudevice = torch.device('gpu')
         #     waveform = waveform.to(gpudevice)
 
+        # decided to do time shift earlier then do block cropping, to prevent too many zero pads
+        if self.do_augmentation:
+            waveform = self.__process_augmentations_before_crop(waveform)
+
+        if self.do_random_block:
+            waveform = self.__random_block(waveform)
+
+        # do the rest of the augmentations with smaller block for faster processing
+
         if self.do_augmentation:
             # do augmentations that we want to affect on both x and y
             waveform = self.__process_augmentations_combo(waveform)
 
             # do augmentations that we want to affect on x and y independently
             waveform = self.__process_augmentations_independent(waveform)
-
-        # decided to do augmentations first then do block cropping due to some sample time shifts
-        if self.do_random_block:
-            waveform = self.__random_block(waveform)
 
         waveform_x = waveform[0]
         waveform_y = waveform[1]
