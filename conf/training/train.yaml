@@ -3,6 +3,7 @@ learning_rate: 0.0003
 max_epochs: 1000
 check_val_every_n_epoch: 10
 accelerator: mps # "cpu", "gpu", "tpu", "ipu", "auto"
+num_workers: 4 # number of workers for training dataloader
 continue_test: true
 
 lossfn: 'MultiResolutionSTFTLoss' # error_to_signal, ESRLoss, DCLoss, LogCoshLoss, SNRLoss, SDSDRLoss, MSELoss, DC_SDSDR_SNR_Loss, STFTLoss, MelSTFTLoss, MultiResolutionSTFTLoss, RandomResolutionSTFTLoss
@@ -14,8 +15,8 @@ loss_preemphasis_aw_filter: false
 
 experiment_name: 'wavenet_aug_MultiResolutionSTFTLoss'
 
-resume_checkpoint: false
-checkpoint_file: './outputs/2023-03-02/05-59-33/models/waveUnet.ckpt'
+resume_checkpoint: true
+checkpoint_file: '/Users/cpoohee/Documents/WaveProjects/SVPluginComp/outputs/2023-03-07/13-31-27/models/wavenet_aug_MultiResolutionSTFTLoss epoch=589.ckpt'
 
 use_checkpoint_callback: true
 model_checkpoint_path: './models/'

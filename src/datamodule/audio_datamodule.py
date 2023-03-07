@@ -18,6 +18,7 @@ class AudioDataModule(pl.LightningDataModule):
         self.df_train = None
         self.df_val = None
         self.df_test = None
+        self.num_workers = cfg.training.num_workers
         self.cfg = cfg
 
     def setup(self, stage: str):
@@ -63,17 +64,29 @@ class AudioDataModule(pl.LightningDataModule):
     def train_dataloader(self):
         assert (self.df_train is not None)
         train_set = AudioDataset(self.df_train, cfg=self.cfg, do_augmentation=True)
-        return DataLoader(train_set, batch_size=self.batch_size)
+        persist_worker = True if self.num_workers > 0 else False
+        return DataLoader(train_set,
+                          batch_size=self.batch_size,
+                          num_workers=self.num_workers,
+                          persistent_workers=persist_worker)
 
     def val_dataloader(self):
         assert (self.df_val is not None)
         val_set = AudioDataset(self.df_val, cfg=self.cfg)
-        return DataLoader(val_set, batch_size=self.batch_size)
+        persist_worker = True if self.num_workers > 0 else False
+        return DataLoader(val_set,
+                          batch_size=self.batch_size,
+                          num_workers=self.num_workers,
+                          persistent_workers=persist_worker)
 
     def test_dataloader(self):
         assert (self.df_test is not None)
         test_set = AudioDataset(self.df_test, cfg=self.cfg)
-        return DataLoader(test_set, batch_size=self.batch_size)
+        persist_worker = True if self.num_workers > 0 else False
+        return DataLoader(test_set,
+                          batch_size=self.batch_size,
+                          num_workers=self.num_workers,
+                          persistent_workers=persist_worker)
 
     def predict_dataloader(self):
         assert (self.df_predict is not None)
