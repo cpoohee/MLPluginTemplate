@@ -8,6 +8,7 @@ import numpy as np
 from pathlib import Path
 from omegaconf import DictConfig
 from src.model.wavenet import WaveNet_PL
+from src.model.waveUnet import WaveUNet_PL
 
 @hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg: DictConfig):
@@ -17,6 +18,9 @@ def main(cfg: DictConfig):
     if cfg.export_to_onnx.model == 'wavenet':
         model_pl = WaveNet_PL.load_from_checkpoint(cur_path/Path(ckpt_path))
         torch_model = model_pl.wavenet
+    elif cfg.export_to_onnx.model == 'waveunet':
+        model_pl = WaveUNet_PL.load_from_checkpoint(cur_path / Path(ckpt_path))
+        torch_model = model_pl.waveunet
     else:
         assert False
 
