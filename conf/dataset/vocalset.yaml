@@ -1,0 +1,4 @@
+data_path: './data/processed/vocalset'
+do_random_block: true
+block_size: 4096
+sample_rate: 44100

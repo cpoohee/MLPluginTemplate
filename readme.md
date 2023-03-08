@@ -45,7 +45,8 @@ Some papers that might be related are:
 
 - [Tae, Jaesung, Hyeongju Kim, and Younggun Lee. "Mlp singer: Towards rapid parallel korean singing voice synthesis." 2021 IEEE 31st International Workshop on Machine Learning for Signal Processing (MLSP). IEEE, 2021.](https://arxiv.org/abs/2106.07886)
 - [Tamaru, Hiroki, et al. "Generative moment matching network-based neural double-tracking for synthesized and natural singing voices." IEICE TRANSACTIONS on Information and Systems 103.3 (2020): 639-647.](https://www.jstage.jst.go.jp/article/transinf/E103.D/3/E103.D_2019EDP7228/_pdf)
-
+- [AlBadawy, Ehab A., and Siwei Lyu. "Voice Conversion Using Speech-to-Speech Neuro-Style Transfer." Interspeech. 2020.](https://ebadawy.github.io/post/speech_style_transfer/Albadawy_et_al-2020-INTERSPEECH.pdf)
+- 
 For ML datasets, usually we feed an input X and target Y for the model to learn (X->Y).
 
 Potentially, our dataset for double takes could be easier if the model learns by using the same input audio as the target.
@@ -90,13 +91,15 @@ Lastly, the model should be small and performant enough to run in a plugin.
   - in JUCE, use ONNX runtime in c++
 - Iterate experiments. 
   - check out STFT based loss functions, already part of auraloss (done)
-  - check U wave net. 
-  - Intending to used embedding layer to train model to respond differently to a selection of index.
-    - like style0, style1,... will output slightly different audio
-    - will try it on u wave net, where we can play around with the bottleneck
-  - Use augmentations 
+  - check U wave net.
+  - train 'spectral recovery' type of neural model
+    - using low passed input. predict full spectrum sound.
   - Increase model size on the small NUS dataset, evaluate usefulness
   - Full dataset training on finalised model
+  - Try voice conversion.. that worked with lower sampled sounds.
+    - train vae gan https://github.com/ebadawy/voice_conversion,
+    - use pretrained logmel vocoder  https://github.com/r9y9/wavenet_vocoder 
+    - use our spectal recovery model to recover highend sounds.
 - Improve plugin usefulness
   - UI
   - Sound, might need tricks to beat the weird bleep during the front of output 
@@ -125,6 +128,9 @@ Lastly, the model should be small and performant enough to run in a plugin.
 # Findings
 - multi res stft loss function creates the most natural sounding generation, tested on basic wavenet
 - melspectrum, any preemphasis also resulted in less natural sounding generation
+- augmentations done on training/testing data only produces models that predicts the original wav, 
+  - the resulting audio is almost a copy of input.
+  - might need a new loss function to penalise exact copy. even then, the audio could be phased flip, eg cossimloss == 1 or -1 
 
 # Brief description of Source code folder and scripts
 - download_data.py -> downloads dataset into data/raw, then pick the audio and place into data/interim
