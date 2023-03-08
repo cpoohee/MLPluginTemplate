@@ -89,10 +89,10 @@ class AudioDataModule(pl.LightningDataModule):
                           num_workers=self.num_workers,
                           persistent_workers=persist_worker)
 
-    def predict_dataloader(self, do_augmentation=False):
+    def predict_dataloader(self):
         assert (self.df_predict is not None)
-        if do_augmentation:
-            pred_set = AudioDataset(self.df_predict, cfg=self.cfg)
+        if self.do_aug_in_predict:
+            pred_set = AudioDataset(self.df_predict, cfg=self.cfg, do_augmentation=True)
             pred_set.set_random_crop(False)
         else:
             pred_set = AudioDatasetPred(self.df_predict, cfg=self.cfg)

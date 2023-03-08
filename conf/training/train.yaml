@@ -13,7 +13,7 @@ loss_preemphasis_hp_coeff: 0.95
 loss_preemphasis_aw_filter: false
 
 
-experiment_name: 'waveunet_spec_rec'
+experiment_name: 'wavenet_spec_rec'
 
 resume_checkpoint: false
 checkpoint_file: '/Users/cpoohee/Documents/WaveProjects/SVPluginComp/outputs/2023-03-07/13-31-27/models/wavenet_aug_MultiResolutionSTFTLoss epoch=589.ckpt'

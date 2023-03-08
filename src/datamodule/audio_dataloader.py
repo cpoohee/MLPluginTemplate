@@ -62,6 +62,7 @@ class AudioDataset(Dataset):
         self.aug_low_pass_x = cfg.augmentations.do_low_pass_x
         self.min_cutoff_freq_x = cfg.augmentations.min_cutoff_freq_x
         self.max_cutoff_freq_x = cfg.augmentations.max_cutoff_freq_x
+        self.low_pass_p_x = cfg.augmentations.low_pass_p_x
 
         # self.device = cfg.training.accelerator
 
@@ -139,12 +140,13 @@ class AudioDataset(Dataset):
                                                            max_length_unit='samples'),
                                                 ])
 
+        transforms = [Identity()]
         if self.aug_low_pass_x:
-            transforms = [Identity()]
             transforms.append(
                 LowPassFilter(
                     min_cutoff_freq=self.min_cutoff_freq_x,
                     max_cutoff_freq=self.max_cutoff_freq_x,
+                    p=self.low_pass_p_x,
                     p_mode='per_example'
                 )
             )
