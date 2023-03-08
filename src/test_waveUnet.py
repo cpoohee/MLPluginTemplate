@@ -1,5 +1,6 @@
 import hydra
 import os
+import torch
 import mlflow
 import simpleaudio as sa
 import pytorch_lightning as pl
@@ -7,6 +8,7 @@ from pathlib import Path
 from omegaconf import DictConfig
 from src.datamodule.audio_datamodule import AudioDataModule
 from src.model.waveUnet import WaveUNet_PL
+from tqdm import tqdm
 
 
 @hydra.main(config_path="../conf", config_name="config")
@@ -24,7 +26,6 @@ def main(cfg: DictConfig):
 
     mlflow.pytorch.autolog()
 
-
     ckpt_path = cfg.testing.checkpoint_file
     assert (ckpt_path is not None)
 
@@ -34,18 +35,47 @@ def main(cfg: DictConfig):
 
     trainer.test(waveUnet_model, dataloaders=dm_test)
 
-    results = trainer.predict(waveUnet_model, dataloaders=dm_pred)
+    waveUnet_model.eval()
+    dm_pred.setup('predict')
+    dm_pred = dm_pred.predict_dataloader()
+    with torch.no_grad():
+        for batch in tqdm(dm_pred):
+            x, y = batch
+            resized_samples = (x.size()[2] // cfg.dataset.block_size) * cfg.dataset.block_size
+            x = x[:, :, 0:resized_samples]
+            y = y[:, :, 0:resized_samples]
 
-    for y, pred in results:
-        print('pred')
-        play_tensor(pred[0])
-        print('original')
-        play_tensor(y[0])
+            x = torch.reshape(x, (-1, 1, cfg.dataset.block_size))
+            y = torch.reshape(y, (-1, 1, cfg.dataset.block_size))
+
+            y_pred = waveUnet_model(x)
+
+            ## reshape block sized batches into one single wav
+            y_pred = torch.reshape(y_pred, (1, 1, -1))
+            y = torch.reshape(y, (1, 1, -1))
+
+            print('pred')
+            play_tensor(y_pred[0])
+            print('original')
+            play_tensor(y[0])
+
+    #
+    # results = trainer.predict(waveUnet_model, dataloaders=dm_pred)
+    #
+    # for y, pred in results:
+    #     print('pred')
+    #     play_tensor(pred[0])
+    #     print('original')
+    #     play_tensor(y[0])
 
 def play_tensor(tensor_sample, sample_rate=44100):
-    numpy_sample = tensor_sample.numpy()
-    play_obj = sa.play_buffer(numpy_sample, 1, 4, sample_rate=sample_rate)
-    play_obj.wait_done()
+    try:
+        numpy_sample = tensor_sample.numpy()
+        play_obj = sa.play_buffer(numpy_sample, 1, 4, sample_rate=sample_rate)
+        play_obj.wait_done()
+    except KeyboardInterrupt:
+        print("next")
+        sa.stop_all()
 
 
 if __name__ == "__main__":
