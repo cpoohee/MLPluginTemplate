@@ -41,3 +41,10 @@ do_pitchshift_indep: false
 min_transpose_semitones_indep: -0.05
 max_transpose_semitones_indep: +0.05
 pitchshift_p_indep: 0.9
+
+#######################################
+## augmentations on x only
+#######################################
+do_low_pass_x: false
+min_cutoff_freq_x: 8000
+max_cutoff_freq_x: 12000

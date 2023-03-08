@@ -3,8 +3,9 @@ import torchaudio
 import pandas as pd
 from torch.utils.data import Dataset
 from omegaconf import DictConfig
-from torch_audiomentations import Compose, Identity, Gain, PolarityInversion, \
-    Shift, AddColoredNoise, PitchShift
+from torch_audiomentations import (
+    Compose, Identity, Gain, PolarityInversion, \
+    Shift, AddColoredNoise, PitchShift, LowPassFilter)
 from src.datamodule.augmentations.custom_pitchshift import PitchShift_Slow
 from src.datamodule.augmentations.random_crop import RandomCrop
 
@@ -58,9 +59,16 @@ class AudioDataset(Dataset):
         self.max_transpose_semitones_indep = cfg.augmentations.max_transpose_semitones_indep
         self.pitchshift_p_indep = cfg.augmentations.pitchshift_p_indep
 
-        #self.device = cfg.training.accelerator
+        self.aug_low_pass_x = cfg.augmentations.do_low_pass_x
+        self.min_cutoff_freq_x = cfg.augmentations.min_cutoff_freq_x
+        self.max_cutoff_freq_x = cfg.augmentations.max_cutoff_freq_x
+
+        # self.device = cfg.training.accelerator
 
         self.__initialise_augmentations()
+
+    def set_random_crop(self, set):
+        self.do_random_block = set
 
     def __initialise_augmentations(self):
         # optimise augmentation time by doing time sensitive augmentation first,
@@ -131,8 +139,24 @@ class AudioDataset(Dataset):
                                                            max_length_unit='samples'),
                                                 ])
 
+        if self.aug_low_pass_x:
+            transforms = [Identity()]
+            transforms.append(
+                LowPassFilter(
+                    min_cutoff_freq=self.min_cutoff_freq_x,
+                    max_cutoff_freq=self.max_cutoff_freq_x,
+                    p_mode='per_example'
+                )
+            )
+        self.apply_augmentation_x = Compose(transforms)
+
+
     def __len__(self):
         return len(self.df)
+
+    def __process_augmentations_input_only(self, waveform):
+        waveform = self.apply_augmentation_x(waveform, sample_rate=self.sample_rate)
+        return waveform
 
     def __process_augmentations_before_crop(self, waveform):
         waveform = self.apply_augmentation_before_crop(waveform, sample_rate=self.sample_rate)
@@ -195,7 +219,7 @@ class AudioDataset(Dataset):
         # do the rest of the augmentations with smaller block for faster processing
 
         if self.do_augmentation:
-            # do augmentations that we want to affect on both x and y
+            # do augmentations that we want to affect on both x and y equally
             waveform = self.__process_augmentations_combo(waveform)
 
             # do augmentations that we want to affect on x and y independently
@@ -203,6 +227,11 @@ class AudioDataset(Dataset):
 
         waveform_x = waveform[0]
         waveform_y = waveform[1]
+
+        if self.do_augmentation:
+            waveform_x = torch.unsqueeze(waveform_x, dim=0)
+            waveform_x = self.__process_augmentations_input_only(waveform_x)
+            waveform_x = waveform_x[0]
 
         # do padding if random block cuts the sample length
         length_x = waveform_x.size(dim=1)

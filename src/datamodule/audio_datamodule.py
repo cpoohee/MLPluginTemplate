@@ -10,7 +10,7 @@ from src.datamodule.audio_dataloader_pred import AudioDatasetPred
 from torch.utils.data import DataLoader
 
 class AudioDataModule(pl.LightningDataModule):
-    def __init__(self, data_dir: Path, cfg: DictConfig, batch_size: int = 32):
+    def __init__(self, data_dir: Path, cfg: DictConfig, batch_size: int = 32, do_aug_in_predict=False):
         super().__init__()
         self.data_dir = data_dir
         self.batch_size = batch_size
@@ -19,6 +19,7 @@ class AudioDataModule(pl.LightningDataModule):
         self.df_val = None
         self.df_test = None
         self.num_workers = cfg.training.num_workers
+        self.do_aug_in_predict = do_aug_in_predict
         self.cfg = cfg
 
     def setup(self, stage: str):
@@ -88,9 +89,13 @@ class AudioDataModule(pl.LightningDataModule):
                           num_workers=self.num_workers,
                           persistent_workers=persist_worker)
 
-    def predict_dataloader(self):
+    def predict_dataloader(self, do_augmentation=False):
         assert (self.df_predict is not None)
-        pred_set = AudioDatasetPred(self.df_predict, cfg=self.cfg)
+        if do_augmentation:
+            pred_set = AudioDataset(self.df_predict, cfg=self.cfg)
+            pred_set.set_random_crop(False)
+        else:
+            pred_set = AudioDatasetPred(self.df_predict, cfg=self.cfg)
         return DataLoader(pred_set, batch_size=self.batch_size)
 
     def teardown(self, stage: str):
