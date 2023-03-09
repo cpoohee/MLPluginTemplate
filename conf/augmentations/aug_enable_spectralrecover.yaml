@@ -10,7 +10,7 @@ gain_p: 0.5
 do_polarity_inv: true
 polarity_p: 0.5
 
-do_pitchshift: true
+do_pitchshift: false
 # in seconds
 min_transpose_semitones: -4.0
 max_transpose_semitones: +4.0
@@ -45,7 +45,7 @@ pitchshift_p_indep: 1.0
 #######################################
 ## augmentations on x only
 #######################################
-do_low_pass_x: true
-min_cutoff_freq_x: 1000
-max_cutoff_freq_x: 4000
+do_low_pass_x: false
+min_cutoff_freq_x: 2000
+max_cutoff_freq_x: 10000
 low_pass_p_x: 1.0

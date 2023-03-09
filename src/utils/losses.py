@@ -1,5 +1,6 @@
 import torch
 import auraloss
+from omegaconf import DictConfig, OmegaConf
 from auraloss.utils import apply_reduction
 
 
@@ -51,10 +52,11 @@ class PreEmphasisFilter(torch.nn.Module):
 
 
 class Losses(torch.nn.Module):
-    def __init__(self, loss_type='error_to_signal', sample_rate='44100'):
+    def __init__(self, loss_type='error_to_signal', sample_rate='44100', cfg: DictConfig=None):
         super(Losses, self).__init__()
         self.loss_type = loss_type
         self.sample_rate = sample_rate
+        self.cfg = cfg
 
         # time domain
         if loss_type == 'error_to_signal':
@@ -80,28 +82,52 @@ class Losses(torch.nn.Module):
 
         # frequency domain
         elif loss_type == 'STFTLoss':
-            self.loss = auraloss.freq.STFTLoss(fft_size=4096,
-                                               win_length=4096,
-                                               hop_size=1024,
-                                               w_phs=0.2,
-                                               sample_rate=self.sample_rate,
-                                               device=torch.device("cpu"));
+            if self.cfg == None:
+                self.loss = auraloss.freq.STFTLoss(fft_size=4096,
+                                                   win_length=4096,
+                                                   hop_size=1024,
+                                                   w_phs=0.2,
+                                                   sample_rate=self.sample_rate,
+                                                   device=torch.device("cpu"))
+            else:
+                self.loss = auraloss.freq.STFTLoss(fft_size=self.cfg.training.loss.fft_size,
+                                                   win_length=self.cfg.training.loss.win_length,
+                                                   hop_size=self.cfg.training.loss.hop_size,
+                                                   w_phs=self.cfg.training.loss.w_phs,
+                                                   sample_rate=self.sample_rate,
+                                                   device=torch.device("cpu"))
 
         elif loss_type == 'MelSTFTLoss':
-            self.loss = auraloss.freq.MelSTFTLoss(fft_size=4096,
-                                                  hop_size=1024,
-                                                  n_mels=128,
-                                                  w_phs=0.2,
-                                                  sample_rate=self.sample_rate,
-                                                  device=torch.device("cpu"));
+            if self.cfg == None:
+                self.loss = auraloss.freq.MelSTFTLoss(fft_size=4096,
+                                                      hop_size=1024,
+                                                      n_mels=128,
+                                                      w_phs=0.2,
+                                                      sample_rate=self.sample_rate,
+                                                      device=torch.device("cpu"))
+            else:
+                self.loss = auraloss.freq.MelSTFTLoss(fft_size=self.cfg.training.loss.fft_size,
+                                                      hop_size=self.cfg.training.loss.hop_size,
+                                                      n_mels=self.cfg.training.loss.n_mels,
+                                                      w_phs=self.cfg.training.loss.w_phs,
+                                                      sample_rate=self.sample_rate,
+                                                      device=torch.device("cpu"))
 
         elif loss_type == 'MultiResolutionSTFTLoss':
-            self.loss = auraloss.freq.MultiResolutionSTFTLoss(
-                fft_sizes=[512, 1024, 2048, 4096],
-                hop_sizes=[50, 120, 240, 480],
-                win_lengths=[512, 1024, 2048, 4096],
-                w_phs=0.2,
-                device=torch.device("cpu"));
+            if self.cfg == None:
+                self.loss = auraloss.freq.MultiResolutionSTFTLoss(
+                    fft_sizes=[512, 1024, 2048, 4096],
+                    hop_sizes=[50, 120, 240, 480],
+                    win_lengths=[512, 1024, 2048, 4096],
+                    w_phs=0.2,
+                    device=torch.device("cpu"));
+            else:
+                self.loss = auraloss.freq.MultiResolutionSTFTLoss(
+                    fft_sizes=OmegaConf.to_object(self.cfg.training.loss.fft_sizes),
+                    win_lengths=OmegaConf.to_object(self.cfg.training.loss.win_lengths),
+                    hop_sizes=OmegaConf.to_object(self.cfg.training.loss.hop_sizes),
+                    w_phs=self.cfg.training.loss.w_phs,
+                    device=torch.device("cpu"));
 
         elif loss_type == 'RandomResolutionSTFTLoss':
             self.loss = auraloss.freq.RandomResolutionSTFTLoss(device=torch.device("cpu"));

@@ -1,2 +1,2 @@
-n_layers: 2
-channel_intervals: 8
+n_layers: 10
+channel_intervals: 24

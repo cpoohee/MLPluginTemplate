@@ -1,4 +1,4 @@
 data_path: './data/processed/nus'
 do_random_block: true
-block_size: 4096
+block_size: 64 # 4096
 sample_rate: 44100

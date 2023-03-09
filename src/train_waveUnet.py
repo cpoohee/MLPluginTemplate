@@ -17,7 +17,8 @@ def main(cfg: DictConfig):
     batch_size = cfg.training.batch_size
     dm_train = AudioDataModule(data_dir=(cur_path / data_path),
                                cfg=cfg,
-                               batch_size=batch_size)
+                               batch_size=batch_size,
+                               shuffle_train=True)
 
     waveUnet_model = WaveUNet_PL(cfg)
 

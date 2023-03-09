@@ -10,7 +10,15 @@ from src.datamodule.audio_dataloader_pred import AudioDatasetPred
 from torch.utils.data import DataLoader
 
 class AudioDataModule(pl.LightningDataModule):
-    def __init__(self, data_dir: Path, cfg: DictConfig, batch_size: int = 32, do_aug_in_predict=False):
+    def __init__(self, data_dir: Path,
+                 cfg: DictConfig,
+                 batch_size: int = 32,
+                 shuffle_train:bool = True,
+                 do_aug_in_predict: bool = False,
+                 do_aug_in_val: bool = False,
+                 do_aug_in_test: bool = False,
+                 do_aug_in_train: bool = True,
+                 ):
         super().__init__()
         self.data_dir = data_dir
         self.batch_size = batch_size
@@ -20,6 +28,10 @@ class AudioDataModule(pl.LightningDataModule):
         self.df_test = None
         self.num_workers = cfg.training.num_workers
         self.do_aug_in_predict = do_aug_in_predict
+        self.do_aug_in_val = do_aug_in_val
+        self.do_aug_in_test = do_aug_in_test
+        self.do_aug_in_train = do_aug_in_train
+        self.shuffle_train = shuffle_train
         self.cfg = cfg
 
     def setup(self, stage: str):
@@ -64,17 +76,21 @@ class AudioDataModule(pl.LightningDataModule):
 
     def train_dataloader(self):
         assert (self.df_train is not None)
-        train_set = AudioDataset(self.df_train, cfg=self.cfg, do_augmentation=True)
+        train_set = AudioDataset(self.df_train,
+                                 cfg=self.cfg,
+                                 do_augmentation=self.do_aug_in_train)
         persist_worker = True if self.num_workers > 0 else False
         return DataLoader(train_set,
                           batch_size=self.batch_size,
                           num_workers=self.num_workers,
-                          persistent_workers=persist_worker)
+                          persistent_workers=persist_worker,
+                          shuffle=self.shuffle_train)
 
     def val_dataloader(self):
         assert (self.df_val is not None)
-        val_set = AudioDataset(self.df_val, cfg=self.cfg)
+        val_set = AudioDataset(self.df_val, cfg=self.cfg, do_augmentation=self.do_aug_in_val)
         persist_worker = True if self.num_workers > 0 else False
+
         return DataLoader(val_set,
                           batch_size=self.batch_size,
                           num_workers=self.num_workers,
@@ -82,7 +98,7 @@ class AudioDataModule(pl.LightningDataModule):
 
     def test_dataloader(self):
         assert (self.df_test is not None)
-        test_set = AudioDataset(self.df_test, cfg=self.cfg)
+        test_set = AudioDataset(self.df_test, cfg=self.cfg, do_augmentation=self.do_aug_in_test)
         persist_worker = True if self.num_workers > 0 else False
         return DataLoader(test_set,
                           batch_size=self.batch_size,
