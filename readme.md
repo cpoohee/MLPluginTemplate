@@ -46,6 +46,7 @@ Some papers that might be related are:
 - [Tae, Jaesung, Hyeongju Kim, and Younggun Lee. "Mlp singer: Towards rapid parallel korean singing voice synthesis." 2021 IEEE 31st International Workshop on Machine Learning for Signal Processing (MLSP). IEEE, 2021.](https://arxiv.org/abs/2106.07886)
 - [Tamaru, Hiroki, et al. "Generative moment matching network-based neural double-tracking for synthesized and natural singing voices." IEICE TRANSACTIONS on Information and Systems 103.3 (2020): 639-647.](https://www.jstage.jst.go.jp/article/transinf/E103.D/3/E103.D_2019EDP7228/_pdf)
 - [AlBadawy, Ehab A., and Siwei Lyu. "Voice Conversion Using Speech-to-Speech Neuro-Style Transfer." Interspeech. 2020.](https://ebadawy.github.io/post/speech_style_transfer/Albadawy_et_al-2020-INTERSPEECH.pdf)
+- [AUTOVC: Zero-Shot Voice Style Transfer with Only Autoencoder Loss](https://arxiv.org/pdf/1905.05879.pdf)
 - 
 For ML datasets, usually we feed an input X and target Y for the model to learn (X->Y).
 
@@ -131,7 +132,9 @@ Lastly, the model should be small and performant enough to run in a plugin.
 - augmentations done on training/testing data only produces models that predicts the original wav, 
   - the resulting audio is almost a copy of input.
   - might need a new loss function to penalise exact copy. even then, the audio could be phased flip, eg cossimloss == 1 or -1 
-
+- realisation that for any useful effects to be used, training from scratch is not practical for this competition.
+  - current machine is not capable to run experiments in time.
+  - need to find pre-trained models, fine-tune and adapt to other potential useful plugins. 
 # Brief description of Source code folder and scripts
 - download_data.py -> downloads dataset into data/raw, then pick the audio and place into data/interim
 - process_data.py -> use the audio from data/interim, process the audio into 1 sec blocks, cuts silences and place into data/processed
