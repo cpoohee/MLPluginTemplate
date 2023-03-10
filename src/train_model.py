@@ -5,7 +5,9 @@ import pytorch_lightning as pl
 from pathlib import Path
 from omegaconf import DictConfig
 from src.datamodule.audio_datamodule import AudioDataModule
+from src.model.wavenet import WaveNet_PL
 from src.model.waveUnet import WaveUNet_PL
+from src.model.autoencoder import AutoEncoder_PL
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import MLFlowLogger
 
@@ -17,10 +19,17 @@ def main(cfg: DictConfig):
     batch_size = cfg.training.batch_size
     dm_train = AudioDataModule(data_dir=(cur_path / data_path),
                                cfg=cfg,
-                               batch_size=batch_size,
-                               shuffle_train=True)
+                               batch_size=batch_size)
 
-    waveUnet_model = WaveUNet_PL(cfg)
+    if cfg.model.model_name == 'WaveNet_PL':
+        model = WaveNet_PL(cfg)
+    elif cfg.model.model_name == 'WaveUNet_PL':
+        model = WaveUNet_PL(cfg)
+    elif cfg.model.model_name == 'AutoEncoder_PL':
+        model = AutoEncoder_PL(cfg)
+    else:
+        assert False, " model name is invalid!"
+
 
     mlflow.pytorch.autolog()
 
@@ -52,7 +61,7 @@ def main(cfg: DictConfig):
     else:
         ckpt_path = None
 
-    trainer.fit(waveUnet_model,
+    trainer.fit(model,
                 train_dataloaders=dm_train,
                 ckpt_path=ckpt_path,
     )
@@ -64,7 +73,7 @@ def main(cfg: DictConfig):
         dm_test = AudioDataModule(data_dir=(cur_path / data_path),
                                    cfg=cfg,
                                    batch_size=batch_size)
-        trainer.test(waveUnet_model, dataloaders=dm_test)
+        trainer.test(model, dataloaders=dm_test)
 
 
 if __name__ == "__main__":

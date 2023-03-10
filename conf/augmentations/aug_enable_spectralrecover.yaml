@@ -46,6 +46,6 @@ pitchshift_p_indep: 1.0
 ## augmentations on x only
 #######################################
 do_low_pass_x: false
-min_cutoff_freq_x: 2000
-max_cutoff_freq_x: 10000
+min_cutoff_freq_x: 9000
+max_cutoff_freq_x: 11000
 low_pass_p_x: 1.0

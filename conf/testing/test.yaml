@@ -1,4 +1,7 @@
-lossfn: 'MultiResolutionSTFTLoss'
-checkpoint_file: './outputs/2023-03-09/19-12-19/models/waveUnet_small_spec_rec_MR_MSE_Loss_fulldata.ckpt'
+model_name: 'AutoEncoder_PL' # WaveNet_PL, WaveUNet_PL, AutoEncoder_PL
+lossfn: 'DC_SDSDR_SNR_Loss'
+checkpoint_file: './outputs/2023-03-10/21-32-28/models/waveunet_DC_SDSDR_SNR_Loss_4096blk.ckpt'
 
 accelerator: mps # "mps", "cpu", "gpu", "tpu", "ipu", "auto"
+do_aug_in_predict: false
+do_aug_in_test: false

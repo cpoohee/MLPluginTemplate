@@ -28,4 +28,7 @@ class AudioDatasetPred(Dataset):
         waveform_x, _ = torchaudio.load(x_path)
         waveform_y, _ = torchaudio.load(y_path)
 
+        # waveform_x = torch.cat((waveform_x, waveform_x), dim=0)  # fake stereo
+        # waveform_y = torch.cat((waveform_y, waveform_y), dim=0)
+
         return waveform_x, waveform_y

@@ -8,6 +8,8 @@ from pathlib import Path
 from omegaconf import DictConfig
 from src.datamodule.audio_datamodule import AudioDataModule
 from src.model.wavenet import WaveNet_PL
+from src.model.waveUnet import WaveUNet_PL
+from src.model.autoencoder import AutoEncoder_PL
 from tqdm import tqdm
 
 
@@ -19,23 +21,30 @@ def main(cfg: DictConfig):
     batch_size = cfg.training.batch_size
     dm_test = AudioDataModule(data_dir=(cur_path / data_path),
                                cfg=cfg,
-                               batch_size=batch_size)
+                               batch_size=batch_size,
+                               do_aug_in_test=cfg.testing.do_aug_in_test)
     dm_pred = AudioDataModule(data_dir=(cur_path / data_path),
                               cfg=cfg,
-                              do_aug_in_predict=True, # allow low passed input
+                              do_aug_in_predict=cfg.testing.do_aug_in_predict, # allow low passed input
                               batch_size=1)
 
     mlflow.pytorch.autolog()
 
-
     ckpt_path = cfg.testing.checkpoint_file
     assert (ckpt_path is not None)
 
-    wavenet_model = WaveNet_PL.load_from_checkpoint(cur_path/Path(ckpt_path))
+    if cfg.testing.model_name == 'WaveNet_PL':
+        model = WaveNet_PL.load_from_checkpoint(cur_path / Path(ckpt_path))
+    elif cfg.testing.model_name == 'WaveUNet_PL':
+        model = WaveUNet_PL.load_from_checkpoint(cur_path / Path(ckpt_path))
+    elif cfg.testing.model_name == 'AutoEncoder_PL':
+        model = AutoEncoder_PL.load_from_checkpoint(cur_path / Path(ckpt_path))
+    else:
+        assert False, " model name is invalid!"
 
-    trainer = pl.Trainer(accelerator=cfg.testing.accelerator,)
+    trainer = pl.Trainer(accelerator=cfg.testing.accelerator)
 
-    trainer.test(wavenet_model, dataloaders=dm_test)
+    trainer.test(model, dataloaders=dm_test)
 
     dm_pred.setup('predict')
     dm_pred = dm_pred.predict_dataloader()
@@ -49,7 +58,7 @@ def main(cfg: DictConfig):
             x = torch.reshape(x, (-1, 1, cfg.dataset.block_size))
             y = torch.reshape(y, (-1, 1, cfg.dataset.block_size))
 
-            y_pred = wavenet_model(x)
+            y_pred = model(x)
 
             ## reshape block sized batches into one single wav
             y_pred = torch.reshape(y_pred, (1, 1, -1))

@@ -1,4 +1,0 @@
-num_channels: 8
-dilation_depth: 11
-num_repeat: 2
-kernel_size: 3

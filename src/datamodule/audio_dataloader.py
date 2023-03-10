@@ -248,4 +248,7 @@ class AudioDataset(Dataset):
                                                  (1, self.block_size - length_y - 1),
                                                  "constant", 0)
 
+        # waveform_x = torch.cat((waveform_x, waveform_x), dim=0) # fake stereo
+        # waveform_y = torch.cat((waveform_y, waveform_y), dim=0)
+
         return waveform_x, waveform_y
