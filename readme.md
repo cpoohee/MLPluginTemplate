@@ -92,15 +92,20 @@ Lastly, the model should be small and performant enough to run in a plugin.
   - in JUCE, use ONNX runtime in c++
 - Iterate experiments. 
   - check out STFT based loss functions, already part of auraloss (done)
-  - check U wave net.
-  - train 'spectral recovery' type of neural model
+  - check U wave net. (done)
+  - train 'spectral recovery' type of neural model (done)
     - using low passed input. predict full spectrum sound.
-  - Increase model size on the small NUS dataset, evaluate usefulness
-  - Full dataset training on finalised model
-  - Try voice conversion.. that worked with lower sampled sounds.
-    - train vae gan https://github.com/ebadawy/voice_conversion,
-    - use pretrained logmel vocoder  https://github.com/r9y9/wavenet_vocoder 
-    - use our spectal recovery model to recover highend sounds.
+  - Increase model size on the small NUS dataset, evaluate usefulness(done)
+  - However, there is a realisation that training from scratch is not practical with current time and machine limitation.
+  - Try out pre-trained auto encoders (done)
+    - using an oversampled audio into an encoder trained in 48kHz seems to be a possible solution to reduce degrading quality for short sample block
+  - Try out pre-trained speaker embedding
+    - re process data folders.. etc speakerA/1.wav, speakerB/1.wav
+    - do tsne plot of the output embeddings of the speakers.
+  - Try out auto encoder + speaker embedding finetuning 
+    - train with A's wave on target speaker A embedding, reconstructing A's wave 
+  - test with A's wave on target speaker B embedding, reconstructing A's wave with B's style  
+
 - Improve plugin usefulness
   - UI
   - Sound, might need tricks to beat the weird bleep during the front of output 
@@ -135,6 +140,10 @@ Lastly, the model should be small and performant enough to run in a plugin.
 - realisation that for any useful effects to be used, training from scratch is not practical for this competition.
   - current machine is not capable to run experiments in time.
   - need to find pre-trained models, fine-tune and adapt to other potential useful plugins. 
+- pre-trained models also suffer reconstruction artifacts.
+  - there is an issue of degrading audio from short sample blocks, any lower than 32768 samples. (nearly 0.68 sec)
+  - we should be able to oversample the audio, passing 32768 samples into the pre-trained model(trained in 48kHz), which represents a shorter blocktime (0.17 sec).
+  
 # Brief description of Source code folder and scripts
 - download_data.py -> downloads dataset into data/raw, then pick the audio and place into data/interim
 - process_data.py -> use the audio from data/interim, process the audio into 1 sec blocks, cuts silences and place into data/processed
