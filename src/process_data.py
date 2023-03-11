@@ -35,12 +35,14 @@ def main(cfg: DictConfig):
 
     print("Preparing dataset:", dataset_label)
 
-    files = []
+    #train test split by speakers
+    speakers = []
     for a_path in audio_dirs:
-        files = librosa.util.find_files(root_path / a_path, ext=ext) + files
+        dataset_path = Path(root_path / a_path)
+        dataset_speakers = [x for x in dataset_path.iterdir() if x.is_dir()]
+        speakers = speakers + dataset_speakers
 
-    # split audio clips for train validation test
-    X_train, X_valtest, y_train, y_valtest = train_test_split(files, files,
+    X_train, X_valtest, y_train, y_valtest = train_test_split(speakers, speakers,
                                                               test_size=(1.0 - train_ratio),
                                                               random_state=seed)
     X_test, X_val, y_test, y_val = train_test_split(X_valtest, y_valtest,
@@ -85,80 +87,59 @@ def process_audio(target_path, audio_paths_X, audio_paths_Y,
                   silence_thresh_dbfs=-16,
                   keep_silence_ms=20):
     # delete folder if it's already there
-
     if target_path.exists():
         print('Clearing', target_path)
         shutil.rmtree(target_path)
     print('Creating', target_path)
-
-    target_path_x = target_path / 'x'
-    target_path_y = target_path / 'y'
-
     Path.mkdir(target_path)
-    Path.mkdir(target_path_x)
-    Path.mkdir(target_path_y)
 
-    audio_path_tup = merge(audio_paths_X, audio_paths_Y)
-    for file_x, file_y in tqdm(audio_path_tup):
-        # yes. just load both times
-        x = AudioSegment.from_file(file_x, ext, frame_rate=sr)
-        y = AudioSegment.from_file(file_y, ext, frame_rate=sr)
+    for speaker_path in tqdm(audio_paths_X, desc='Processing Speaker', position=0):
+        # create folders for each speaker
+        # WARNING: this assumes unique speaker names across different datasets!
+        if (target_path/speaker_path.name).exists():
+            assert False , 'speaker names are not unique!'
+        Path.mkdir(target_path/speaker_path.name)
 
-        # force to mono
-        x = x.set_channels(1)
-        y = y.set_channels(1)
+        # find audio under speaker paths
+        speaker_files = librosa.util.find_files(speaker_path, ext=ext)
+        for file_x in tqdm(speaker_files, desc='Processing Audio', position=1, leave=False):
+            # ignore audio_paths_Y
+            x = AudioSegment.from_file(file_x, ext, frame_rate=sr)
 
-        # peak normalization each clip
-        x = effects.normalize(x)
-        y = effects.normalize(y)
+            target_path_x = (target_path / speaker_path.name)
 
-        # fix at 16 bit... 1 is 8bit, 2 is 16 bit, 4 is 32bit. there is no 3 24bit due to api limits
-        x = x.set_sample_width(4)
-        y = y.set_sample_width(4)
+            # force to mono
+            x = x.set_channels(1)
+            # peak normalization each clip
+            x = effects.normalize(x)
+            # fix at 16 bit... 1 is 8bit, 2 is 16 bit, 4 is 32bit. there is no 3 24bit due to api limits
+            x = x.set_sample_width(4)
+            if audio_length_ms is not None:
+                x_silence = split_on_silence(x,
+                                             # split on silences longer than xx ms
+                                             min_silence_len=min_silence_len_ms,
+                                             # anything under xx dBFS is considered silence
+                                             silence_thresh=silence_thresh_dbfs,
+                                             # keep xx ms of leading/trailing silence
+                                             keep_silence=keep_silence_ms)
 
-        if audio_length_ms is not None:
-            x_silence = split_on_silence(x,
-                                         # split on silences longer than xx ms
-                                         min_silence_len=min_silence_len_ms,
-                                         # anything under xx dBFS is considered silence
-                                         silence_thresh=silence_thresh_dbfs,
-                                         # keep xx ms of leading/trailing silence
-                                         keep_silence=keep_silence_ms)
+                if len(x_silence) == 0:
+                    # do not save as it is empty.
+                    continue
 
-            y_silence = split_on_silence(y,
-                                         # split on silences longer than xx ms
-                                         min_silence_len=min_silence_len_ms,
-                                         # anything under xx dBFS is considered silence
-                                         silence_thresh=silence_thresh_dbfs,
-                                         # keep xx ms of leading/trailing silence
-                                         keep_silence=keep_silence_ms)
+                # recombine
+                x = AudioSegment.empty()
+                for i in x_silence:
+                    x += i
 
-            if len(x_silence) == 0 or len(y_silence) == 0:
-                # do not save as it is empty.
-                continue
+                # split the audio clips into 1 sec lengths, pad zero if smaller.
+                x_chunks = make_chunks(x, audio_length_ms)  # Make chunks of one sec
 
-            # recombine
-            x = AudioSegment.empty()
-            for i in x_silence:
-                x += i
-
-            y = AudioSegment.empty()
-            for i in y_silence:
-                y += i
-
-            # split the audio clips into 1 sec lengths, pad zero if smaller.
-            x_chunks = make_chunks(x, audio_length_ms)  # Make chunks of one sec
-            y_chunks = make_chunks(y, audio_length_ms)  # Make chunks of one sec
-
-            # Export all individual chunks as wav files
-            export_chunk(x_chunks, file_x, target_path_x)
-            # Export all individual chunks as wav files
-            export_chunk(y_chunks, file_y, target_path_y)
-
-        else:
-            # save to destination
-            x.export(target_path_x / Path(file_x).name, format='wav')
-            y.export(target_path_y / Path(file_y).name, format='wav')
+                # Export all individual chunks as wav files
+                export_chunk(x_chunks, file_x, target_path_x)
+            else:
+                # save to destination
+                x.export(target_path_x / Path(file_x).name, format='wav')
 
 
 def export_chunk(chunks, src_file, path_targ):
