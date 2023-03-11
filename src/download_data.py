@@ -160,27 +160,28 @@ def download_vctk():
 
         # copy extracted flac to wav to interim
         for file_path in tqdm(flac_files):
-            # send all of this dataset's spoken files
-            file_path = Path(file_path)
-            speaker_name = file_path.parent.name  # only specific to vctk dataset
-            speaker_path = root_path / vctk_interim_path / speaker_name
-            target_path = speaker_path / file_path.name
+            if 'mic1' in str(file_path):  # store only mic1 audio
+                # send all of this dataset's spoken files
+                file_path = Path(file_path)
+                speaker_name = file_path.parent.name  # only specific to vctk dataset
+                speaker_path = root_path / vctk_interim_path / speaker_name
+                target_path = speaker_path / file_path.name
 
-            if not speaker_path.exists():
-                Path.mkdir(speaker_path)
+                if not speaker_path.exists():
+                    Path.mkdir(speaker_path)
 
-            i = 1
-            while True:
-                if target_path.exists():
-                    target_path = speaker_path / (
-                            file_path.stem + '_' + str(i) + file_path.suffix
-                    )
-                    i += 1
-                    continue
-                else:
-                    break
-            data, sr = librosa.load(file_path)
-            sf.write(target_path.with_suffix('.wav'), data, sr, subtype='PCM_16')
+                i = 1
+                while True:
+                    if target_path.exists():
+                        target_path = speaker_path / (
+                                file_path.stem + '_' + str(i) + file_path.suffix
+                        )
+                        i += 1
+                        continue
+                    else:
+                        break
+                data, sr = sf.read(file_path)
+                sf.write(target_path.with_suffix('.wav'), data, sr, subtype='PCM_16')
 
         # delete original extracted files
         shutil.rmtree(root_path / vctk_raw_path / 'txt');
