@@ -40,12 +40,19 @@ def download_nus48e():
         for file_path in Path(nus_raw_path_posix).glob('**/*.wav'):
             # copy only singing vocals.
             if 'sing' in str(file_path):
-                target_path = root_path / nus_interim_path / file_path.name
+                speaker_name = file_path.parent.parent.name # only specific to nus dataset
+                speaker_path = root_path / nus_interim_path / speaker_name
+                target_path = speaker_path / file_path.name
+
+                if not speaker_path.exists():
+                    Path.mkdir(speaker_path)
+
                 i = 1
                 while True:
                     if target_path.exists():
-                        target_path = root_path / nus_interim_path / (
-                                file_path.stem + '_' + str(i) + file_path.suffix)
+                        target_path = speaker_path / (
+                                file_path.stem + '_' + str(i) + file_path.suffix
+                        )
                         i += 1
                         continue
                     else:
@@ -86,12 +93,19 @@ def download_vocalset():
         # copy extracted wav to interim
         for file_path in Path(vocalset_raw_path_posix).glob('**/*.wav'):
             # include this dataset's spoken files
-            target_path = root_path / vocalset_interim_path / file_path.name
+            speaker_name = file_path.parent.parent.parent.name  # only specific to vocalset dataset
+            speaker_path = root_path / vocalset_interim_path / speaker_name
+            target_path = speaker_path / file_path.name
+
+            if not speaker_path.exists():
+                Path.mkdir(speaker_path)
+
             i = 1
             while True:
                 if target_path.exists():
-                    target_path = root_path / vocalset_interim_path / (
-                            file_path.stem + '_' + str(i) + file_path.suffix)
+                    target_path = speaker_path / (
+                            file_path.stem + '_' + str(i) + file_path.suffix
+                    )
                     i += 1
                     continue
                 else:
@@ -147,13 +161,20 @@ def download_vctk():
         # copy extracted flac to wav to interim
         for file_path in tqdm(flac_files):
             # send all of this dataset's spoken files
-            file_path = Path (file_path)
-            target_path = root_path / vctk_interim_path / file_path.name
+            file_path = Path(file_path)
+            speaker_name = file_path.parent.name  # only specific to vctk dataset
+            speaker_path = root_path / vctk_interim_path / speaker_name
+            target_path = speaker_path / file_path.name
+
+            if not speaker_path.exists():
+                Path.mkdir(speaker_path)
+
             i = 1
             while True:
                 if target_path.exists():
-                    target_path = root_path / vctk_interim_path / (
-                            file_path.stem + '_' + str(i) + file_path.suffix)
+                    target_path = speaker_path / (
+                            file_path.stem + '_' + str(i) + file_path.suffix
+                    )
                     i += 1
                     continue
                 else:
