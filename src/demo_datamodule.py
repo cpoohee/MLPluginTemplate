@@ -28,7 +28,6 @@ def main(cfg: DictConfig):
         play_tensor(speaker[0])
 
 
-
 def play_tensor(tensor_sample, sample_rate=44100):
     cpudevice = torch.device('cpu')
     tensor_sample = tensor_sample.to(cpudevice)
