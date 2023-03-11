@@ -128,8 +128,8 @@ Lastly, the model should be small and performant enough to run in a plugin.
 
 # Experiments
 - use a simple wavenet. time based input/output, convert to run in JUCE
-- use a STFT-based input to investigate latency limitation or benefits in natural sounding
-- Decide on method and improve.
+- use a pre-trained auto encoder
+- use a pre-trained speaker embedding
 
 # Findings
 - multi res stft loss function creates the most natural sounding generation, tested on basic wavenet
@@ -143,6 +143,8 @@ Lastly, the model should be small and performant enough to run in a plugin.
 - pre-trained models also suffer reconstruction artifacts.
   - there is an issue of degrading audio from short sample blocks, any lower than 32768 samples. (nearly 0.68 sec)
   - we should be able to oversample the audio, passing 32768 samples into the pre-trained model(trained in 48kHz), which represents a shorter blocktime (0.17 sec).
+  - might explore `cached_conv` library to solve clicks from inferencing the beginning of the sample block. Onnx might not be able to convert it??
+  - 
   
 # Brief description of Source code folder and scripts
 - download_data.py -> downloads dataset into data/raw, then pick the audio and place into data/interim
