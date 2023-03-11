@@ -21,9 +21,12 @@ def main(cfg: DictConfig):
     dm_train.setup(stage='fit')
 
     for i, batch in enumerate(dm_train.train_dataloader()):
-        x, y = batch
+        x, y, speaker, name = batch
+        print('y')
         play_tensor(y[0])
-        print(i)
+        print('speaker')
+        play_tensor(speaker[0])
+
 
 
 def play_tensor(tensor_sample, sample_rate=44100):

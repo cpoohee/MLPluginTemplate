@@ -44,34 +44,34 @@ class AudioDataModule(pl.LightningDataModule):
             self.df_predict = self.form_dataframe(self.data_dir / 'predict')
 
     def form_dataframe(self, data_path):
-        data_path_x = data_path / 'x'
-        data_path_y = data_path / 'y'
+        dataset_speakers = [x for x in data_path.iterdir() if x.is_dir()]
 
-        x_files = librosa.util.find_files(data_path_x, ext=self.ext)
-        y_files_unsorted = librosa.util.find_files(data_path_y, ext=self.ext)
+        speaker_names = []
+        x_files = []
 
-        # ensure files are unique
-        x_files_unique = np.unique(x_files)
-        y_files_unsorted_unique = np.unique(y_files_unsorted)
-        assert (len(x_files) == len(x_files_unique))
-        assert (len(y_files_unsorted) == len(y_files_unsorted_unique))
+        for speaker in dataset_speakers:
+            data_path_x = data_path / speaker.name
+            speaker_files = librosa.util.find_files(data_path_x, ext=self.ext)
+            for x_file in speaker_files:
+                x_files.append(x_file)
+                speaker_names.append(speaker.name)
 
-        # do a proper search to assign y based on filename
-        y_files = []
-        for x_file in x_files:
-            train_filename = Path(x_file).name
-            found = False
-            for i, y_file in enumerate(y_files_unsorted):
-                if Path(y_file).name == train_filename:
-                    y_files.append(y_file)
-                    y_files_unsorted.pop(i)
-                    found = True
-                    break
-
-            assert (found is True)
-
-        data = {'x': x_files, 'y': y_files}
+        data = {'x': x_files, 'speaker_name': speaker_names}
         df = pd.DataFrame(data=data)
+        df['related_speakers'] = ''
+
+        # pre insert indexes of the same speakers into related_speakers
+        for speaker in dataset_speakers:
+            indexes_to_speaker = df[df['speaker_name'] == speaker.name].index
+            df.loc[df["speaker_name"] == speaker.name, "related_speakers"] = \
+                [indexes_to_speaker.tolist()]  # yes, need a nested list
+
+        # remove 'self' index in the  related_speakers
+        for index, row in df.iterrows():
+            indexes_to_speaker = row['related_speakers'].copy()  # somehow, we need a copy
+            indexes_to_speaker.remove(index)
+            df.loc[index, 'related_speakers'] = indexes_to_speaker  # no need for nested list
+
         return df
 
     def train_dataloader(self):

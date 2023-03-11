@@ -1,5 +1,6 @@
 import torch
 import torchaudio
+import random
 import pandas as pd
 from torch.utils.data import Dataset
 from omegaconf import DictConfig
@@ -16,6 +17,7 @@ class AudioDataset(Dataset):
         self.sample_length = int(
             cfg.dataset.sample_rate * cfg.process_data.clip_interval_ms / 1000.0)
         self.block_size = cfg.dataset.block_size
+        self.block_size_speaker = cfg.dataset.block_size_speaker
         self.sample_rate = cfg.dataset.sample_rate
 
         # for cropping audio length
@@ -63,8 +65,6 @@ class AudioDataset(Dataset):
         self.min_cutoff_freq_x = cfg.augmentations.min_cutoff_freq_x
         self.max_cutoff_freq_x = cfg.augmentations.max_cutoff_freq_x
         self.low_pass_p_x = cfg.augmentations.low_pass_p_x
-
-        # self.device = cfg.training.accelerator
 
         self.__initialise_augmentations()
 
@@ -135,10 +135,17 @@ class AudioDataset(Dataset):
 
         self.apply_augmentation_indep = Compose(transforms)
 
-        self.apply_augmentation_crop = Compose([RandomCrop(max_length=self.block_size,
-                                                           sampling_rate=self.sample_rate,
-                                                           max_length_unit='samples'),
-                                                ])
+        self.apply_augmentation_crop = \
+            Compose([RandomCrop(max_length=self.block_size,
+                                sampling_rate=self.sample_rate,
+                                max_length_unit='samples'),
+                     ])
+
+        self.apply_augmentation_crop_speaker = \
+            Compose([RandomCrop(max_length=self.block_size_speaker,
+                                sampling_rate=self.sample_rate,
+                                max_length_unit='samples'),
+                     ])
 
         transforms = [Identity()]
         if self.aug_low_pass_x:
@@ -151,7 +158,6 @@ class AudioDataset(Dataset):
                 )
             )
         self.apply_augmentation_x = Compose(transforms)
-
 
     def __len__(self):
         return len(self.df)
@@ -174,42 +180,43 @@ class AudioDataset(Dataset):
         return waveform
 
     def __random_block(self, waveform):
-        waveform = self.apply_augmentation_crop(waveform, sample_rate=self.sample_rate)
+        if waveform.size(dim=2) > self.block_size:
+            waveform = self.apply_augmentation_crop(waveform, sample_rate=self.sample_rate)
+        return waveform
+
+    def __random_block_speaker(self, waveform):
+        if waveform.size(dim=2) > self.block_size_speaker:
+            waveform = self.apply_augmentation_crop_speaker(waveform, sample_rate=self.sample_rate)
+        return waveform
+
+    def __padding(self, waveform):
+        # do padding if file is too small
+        length_x = waveform.size(dim=1)
+        if length_x < self.sample_length:
+            waveform = torch.nn.functional.pad(waveform,
+                                               (1, self.sample_length - length_x - 1),
+                                               "constant", 0)
         return waveform
 
     def __getitem__(self, idx):
         data = self.df.iloc[idx]
         x_path = data['x']
-        y_path = data['y']
+        speaker_name = data['speaker_name']
+        related_speakers = data['related_speakers']
+        id_other = random.choice(related_speakers)
+        speaker_path = self.df.iloc[id_other].x
 
         waveform_x, _ = torchaudio.load(x_path)
-        waveform_y, _ = torchaudio.load(y_path)
+        waveform_speaker, _ = torchaudio.load(speaker_path)
 
-        # do padding if file is too small
-        length_x = waveform_x.size(dim=1)
-        if length_x < self.sample_length:
-            waveform_x = torch.nn.functional.pad(waveform_x,
-                                                 (1, self.sample_length - length_x - 1),
-                                                 "constant", 0)
-
-        length_y = waveform_y.size(dim=1)
-        if length_y < self.sample_length:
-            waveform_y = torch.nn.functional.pad(waveform_y,
-                                                 (1, self.sample_length - length_y - 1),
-                                                 "constant", 0)
+        waveform_x = self.__padding(waveform_x)
+        waveform_speaker = self.__padding(waveform_speaker)
 
         # 'batch' up waveforms x and y together
         waveform_x = torch.unsqueeze(waveform_x, dim=0)
-        waveform_y = torch.unsqueeze(waveform_y, dim=0)
+        waveform_y = waveform_x  # copy input as target
+        waveform_speaker = torch.unsqueeze(waveform_speaker, dim=0)
         waveform = torch.cat((waveform_x, waveform_y), 0)
-
-        # still faster in cpu than accelerator.. so we disable it, furthermore, mps still do not work for many augmentations.
-        # if self.device == 'mps':
-        #     mpsdevice = torch.device('mps')
-        #     waveform = waveform.to(mpsdevice)
-        # elif self.device == 'gpu':
-        #     gpudevice = torch.device('gpu')
-        #     waveform = waveform.to(gpudevice)
 
         # decided to do time shift earlier then do block cropping, to prevent too many zero pads
         if self.do_augmentation:
@@ -217,6 +224,7 @@ class AudioDataset(Dataset):
 
         if self.do_random_block:
             waveform = self.__random_block(waveform)
+            waveform_speaker = self.__random_block_speaker(waveform_speaker)
 
         # do the rest of the augmentations with smaller block for faster processing
 
@@ -235,20 +243,11 @@ class AudioDataset(Dataset):
             waveform_x = self.__process_augmentations_input_only(waveform_x)
             waveform_x = waveform_x[0]
 
-        # do padding if random block cuts the sample length
-        length_x = waveform_x.size(dim=1)
-        if length_x < self.block_size:
-            waveform_x = torch.nn.functional.pad(waveform_x,
-                                                 (1, self.block_size - length_x - 1),
-                                                 "constant", 0)
-
-        length_y = waveform_y.size(dim=1)
-        if length_y < self.block_size:
-            waveform_y = torch.nn.functional.pad(waveform_y,
-                                                 (1, self.block_size - length_y - 1),
-                                                 "constant", 0)
+        waveform_x = self.__padding(waveform_x)
+        waveform_y = self.__padding(waveform_y)
+        waveform_speaker = self.__padding(waveform_speaker)
 
         # waveform_x = torch.cat((waveform_x, waveform_x), dim=0) # fake stereo
         # waveform_y = torch.cat((waveform_y, waveform_y), dim=0)
 
-        return waveform_x, waveform_y
+        return waveform_x, waveform_y, waveform_speaker, speaker_name
