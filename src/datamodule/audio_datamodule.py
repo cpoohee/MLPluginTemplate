@@ -1,5 +1,3 @@
-import numpy as np
-from torch import optim, nn, utils, Tensor
 import pytorch_lightning as pl
 import librosa
 import pandas as pd
@@ -66,7 +64,7 @@ class AudioDataModule(pl.LightningDataModule):
             df.loc[df["speaker_name"] == speaker.name, "related_speakers"] = \
                 [indexes_to_speaker.tolist()]  # yes, need a nested list
 
-        # remove 'self' index in the  related_speakers
+        # remove 'self' index in the related_speakers
         for index, row in df.iterrows():
             indexes_to_speaker = row['related_speakers'].copy()  # somehow, we need a copy
             indexes_to_speaker.remove(index)

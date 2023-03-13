@@ -5,7 +5,7 @@ import pandas as pd
 from torch.utils.data import Dataset
 from omegaconf import DictConfig
 from torch_audiomentations import (
-    Compose, Identity, Gain, PolarityInversion, \
+    Compose, Identity, Gain, PolarityInversion,
     Shift, AddColoredNoise, PitchShift, LowPassFilter)
 from src.datamodule.augmentations.custom_pitchshift import PitchShift_Slow
 from src.datamodule.augmentations.random_crop import RandomCrop
