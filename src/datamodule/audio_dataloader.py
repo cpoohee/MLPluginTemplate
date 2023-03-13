@@ -245,7 +245,7 @@ class AudioDataset(Dataset):
 
         waveform_x = self.__padding(waveform_x)
         waveform_y = self.__padding(waveform_y)
-        waveform_speaker = self.__padding(waveform_speaker)
+        waveform_speaker = self.__padding(waveform_speaker[0])
 
         # waveform_x = torch.cat((waveform_x, waveform_x), dim=0) # fake stereo
         # waveform_y = torch.cat((waveform_y, waveform_y), dim=0)
