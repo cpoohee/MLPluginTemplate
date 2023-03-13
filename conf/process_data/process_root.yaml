@@ -1,7 +1,7 @@
 defaults:
   - dataset: nus
 
-seed: 1
+seed: 2 # choose 2 for equal male female split in nus dataset
 train_ratio: 0.7
 val_ratio: 0.5 # of the 0.3 left
 ext: 'wav'
