@@ -26,18 +26,18 @@ colored_noise_p: 0.3
 #######################################
 ## independent augmentations on x and y
 #######################################
-do_gain_indep: true
+do_gain_indep: false
 min_gain_in_db_indep: -2.0
 max_gain_in_db_indep: 0.0
 gain_p_indep: 1.0
 
-do_timeshift_indep: true
+do_timeshift_indep: false
 # in seconds
 min_shift_indep: -0.1
 max_shift_indep: +0.1
 timeshift_p_indep: 1.0
 
-do_pitchshift_indep: true
+do_pitchshift_indep: false
 min_transpose_semitones_indep: -0.50
 max_transpose_semitones_indep: +0.50
 pitchshift_p_indep: 1.0
@@ -45,7 +45,7 @@ pitchshift_p_indep: 1.0
 #######################################
 ## augmentations on x only
 #######################################
-do_low_pass_x: true
+do_low_pass_x: false
 min_cutoff_freq_x: 8000
 max_cutoff_freq_x: 12000
 low_pass_p_x: 1.0

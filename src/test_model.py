@@ -10,6 +10,7 @@ from src.datamodule.audio_datamodule import AudioDataModule
 from src.model.wavenet import WaveNet_PL
 from src.model.waveUnet import WaveUNet_PL
 from src.model.autoencoder import AutoEncoder_PL
+from src.model.autoencoder_speaker import AutoEncoder_Speaker_PL
 from tqdm import tqdm
 
 
@@ -40,6 +41,8 @@ def main(cfg: DictConfig):
         model = WaveUNet_PL.load_from_checkpoint(cur_path / Path(ckpt_path))
     elif cfg.testing.model_name == 'AutoEncoder_PL':
         model = AutoEncoder_PL.load_from_checkpoint(cur_path / Path(ckpt_path))
+    elif cfg.model.model_name == 'AutoEncoder_Speaker_PL':
+        model = AutoEncoder_Speaker_PL.load_from_checkpoint(cur_path / Path(ckpt_path))
     else:
         assert False, " model name is invalid!"
 

@@ -15,7 +15,7 @@ loss_preemphasis_hp_coeff: 0.95
 loss_preemphasis_aw_filter: false
 
 
-experiment_name: 'auto_DC_SDSDR_SNR_Loss_4096blk'
+experiment_name: 'auto_DC_SDSDR_SNR_Loss'
 
 
 resume_checkpoint: false

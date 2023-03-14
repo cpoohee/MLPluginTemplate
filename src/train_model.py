@@ -8,6 +8,7 @@ from src.datamodule.audio_datamodule import AudioDataModule
 from src.model.wavenet import WaveNet_PL
 from src.model.waveUnet import WaveUNet_PL
 from src.model.autoencoder import AutoEncoder_PL
+from src.model.autoencoder_speaker import AutoEncoder_Speaker_PL
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import MLFlowLogger
 
@@ -27,6 +28,9 @@ def main(cfg: DictConfig):
         model = WaveUNet_PL(cfg)
     elif cfg.model.model_name == 'AutoEncoder_PL':
         model = AutoEncoder_PL(cfg)
+    elif cfg.model.model_name == 'AutoEncoder_Speaker_PL':
+        cfg.model.embedder_path = cur_path / Path(cfg.model.embedder_path)
+        model = AutoEncoder_Speaker_PL(cfg)
     else:
         assert False, " model name is invalid!"
 
