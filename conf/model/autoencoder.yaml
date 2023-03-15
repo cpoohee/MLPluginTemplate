@@ -1,2 +1,1 @@
 model_name: 'AutoEncoder_PL' # WaveNet_PL, WaveUNet_PL, AutoEncoder_PL
-embedder_path: './models/pre-trained/voice_filter_embedder.pt'

@@ -71,24 +71,32 @@ class AudioDataset(Dataset):
 
         self.__initialise_augmentations()
 
-        # speech embedder
-        self.embedder = SpeechEmbedder()
-        chkpt_embed = torch.load(cfg.model.embedder_path, map_location=cfg.training.accelerator)
-        self.embedder.load_state_dict(chkpt_embed)
-        self.embedder.eval()
-        self.audio_helper = AudioHelper()
+        self.model_name = cfg.model.model_name
 
-        self.resampler = T.Resample(orig_freq=cfg.dataset.block_size_speaker,
-                                    new_freq=self.embedder.get_target_sample_rate())
+        if self.model_name == 'AutoEncoder_Speaker_PL':
+            # speech embedder
+            self.embedder = SpeechEmbedder()
+            chkpt_embed = torch.load(cfg.model.embedder_path, map_location=cfg.training.accelerator)
+            self.embedder.load_state_dict(chkpt_embed)
+            self.embedder.eval()
+            self.audio_helper = AudioHelper()
+
+            # try to be as close as librosa's resampling
+            self.resampler = T.Resample(orig_freq=cfg.dataset.block_size_speaker,
+                                        new_freq=self.embedder.get_target_sample_rate(),
+                                        lowpass_filter_width=64,
+                                        rolloff=0.9475937167399596,
+                                        resampling_method="sinc_interp_kaiser",
+                                        beta=14.769656459379492,
+                                        )
+
+
 
     def __get_embedding_vec(self, waveform_speaker):
         # embedding d vec
         waveform_speaker = self.resampler(waveform_speaker)  # resample to 16kHz
-
-        waveform_speaker_np = waveform_speaker.numpy(force=True)
-        waveform_speaker_np = np.squeeze(waveform_speaker_np)  # assumes mono already
-        dvec_mel = self.audio_helper.get_mel(waveform_speaker_np)  # helper works in numpy array
-        dvec_mel = torch.from_numpy(dvec_mel).float()  # get back to tensor
+        waveform_speaker = waveform_speaker.squeeze()  # [16000]
+        dvec_mel, _, _ = self.audio_helper.get_mel_torch(waveform_speaker)
         with torch.no_grad():
             dvec = self.embedder(dvec_mel)
             return dvec
@@ -273,7 +281,10 @@ class AudioDataset(Dataset):
         waveform_speaker = self.__padding(waveform_speaker[0], self.block_size_speaker)
 
         # get speaker embeddings
-        dvec = self.__get_embedding_vec(waveform_speaker)
+        if self.self.model_name == 'AutoEncoder_Speaker_PL':
+            dvec = self.__get_embedding_vec(waveform_speaker)
+        else:
+            dvec = waveform_speaker
 
         # waveform_x = torch.cat((waveform_x, waveform_x), dim=0) # fake stereo
         # waveform_y = torch.cat((waveform_y, waveform_y), dim=0)
