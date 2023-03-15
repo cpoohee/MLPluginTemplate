@@ -6,9 +6,28 @@ from tqdm import tqdm
 
 
 def main():
-    download_rtvc()
-    download_vctk_ae()
-    download_vf()
+    downlaod_archisound_ae()
+    # download_rtvc()
+    # download_vctk_ae()
+    # download_vf()
+
+def downlaod_archisound_ae():
+    root_path = Path(os.path.abspath(os.getcwd()))
+    pre_trained_path = Path("./models/pre-trained/")
+    if not pre_trained_path.exists():
+        Path.mkdir(root_path / pre_trained_path)
+
+    pre_trained_ae_path = Path("./models/pre-trained/ae")
+    if not pre_trained_ae_path.exists():
+        Path.mkdir(root_path / pre_trained_ae_path)
+
+    aae_path = pre_trained_ae_path / 'pytorch_model.bin'
+    aae_link = 'https://huggingface.co/archinetai/autoencoder1d-AT-v1/resolve/main/pytorch_model.bin'
+    download_url(aae_link, aae_path)
+
+    aae_conf_path = pre_trained_ae_path / 'config.json'
+    aae_conf_link = 'https://huggingface.co/archinetai/autoencoder1d-AT-v1/resolve/main/config.json'
+    download_url(aae_conf_link, aae_conf_path)
 
 def download_rtvc():
     root_path = Path(os.path.abspath(os.getcwd()))
