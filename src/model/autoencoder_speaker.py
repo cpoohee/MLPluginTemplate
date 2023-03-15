@@ -14,23 +14,22 @@ from transformers import PretrainedConfig
 
 from archisound import ArchiSound
 
-bottleneck = { 'tanh': TanhBottleneck }
+bottleneck = {'tanh': TanhBottleneck}
 
 
 class AutoEncoder1dConfig(PretrainedConfig):
-
     model_type = "archinetai/autoencoder1d-AT-v1"
 
     def __init__(
-        self,
-        in_channels: int = 2,
-        patch_size: int = 4,
-        channels: int = 32,
-        multipliers: Sequence[int] = [1, 2, 4, 8, 8, 8, 1],
-        factors: Sequence[int] = [2, 2, 2, 1, 1, 1],
-        num_blocks: Sequence[int] = [2, 2, 8, 8, 8, 8],
-        bottleneck: str = 'tanh',
-        **kwargs
+            self,
+            in_channels: int = 2,
+            patch_size: int = 4,
+            channels: int = 32,
+            multipliers: Sequence[int] = [1, 2, 4, 8, 8, 8, 1],
+            factors: Sequence[int] = [2, 2, 2, 1, 1, 1],
+            num_blocks: Sequence[int] = [2, 2, 8, 8, 8, 8],
+            bottleneck: str = 'tanh',
+            **kwargs
     ):
         self.in_channels = in_channels
         self.patch_size = patch_size
@@ -41,7 +40,11 @@ class AutoEncoder1dConfig(PretrainedConfig):
         self.bottleneck = bottleneck
         super().__init__(**kwargs)
 
+
 class AutoEncoder1d(PreTrainedModel):
+    """
+    Hugging face AE model
+    """
 
     config_class = AutoEncoder1dConfig
 
@@ -49,13 +52,13 @@ class AutoEncoder1d(PreTrainedModel):
         super().__init__(config)
 
         self.autoencoder = AE1d(
-            in_channels = config.in_channels,
-            patch_size = config.patch_size,
-            channels = config.channels,
-            multipliers = config.multipliers,
-            factors = config.factors,
-            num_blocks = config.num_blocks,
-            bottleneck = bottleneck[config.bottleneck]()
+            in_channels=config.in_channels,
+            patch_size=config.patch_size,
+            channels=config.channels,
+            multipliers=config.multipliers,
+            factors=config.factors,
+            num_blocks=config.num_blocks,
+            bottleneck=bottleneck[config.bottleneck]()
         )
 
     def forward(self, *args, **kwargs):
@@ -69,18 +72,22 @@ class AutoEncoder1d(PreTrainedModel):
 
 
 class AE1d(nn.Module):
+    """
+    audio_encoders_pytorch's ae model
+    """
+
     def __init__(
-        self,
-        in_channels: int,
-        channels: int,
-        multipliers: Sequence[int],
-        factors: Sequence[int],
-        num_blocks: Sequence[int],
-        patch_size: int = 1,
-        resnet_groups: int = 8,
-        out_channels: Optional[int] = None,
-        bottleneck: Union[Bottleneck, List[Bottleneck]] = [],
-        bottleneck_channels: Optional[int] = None,
+            self,
+            in_channels: int,
+            channels: int,
+            multipliers: Sequence[int],
+            factors: Sequence[int],
+            num_blocks: Sequence[int],
+            patch_size: int = 1,
+            resnet_groups: int = 8,
+            out_channels: Optional[int] = None,
+            bottleneck: Union[Bottleneck, List[Bottleneck]] = [],
+            bottleneck_channels: Optional[int] = None,
     ):
         super().__init__()
         out_channels = default(out_channels, in_channels)
@@ -109,7 +116,7 @@ class AE1d(nn.Module):
         )
 
     def forward(
-        self, x: Tensor, with_info: bool = False
+            self, x: Tensor, with_info: bool = False
     ) -> Union[Tensor, Tuple[Tensor, Any]]:
         z, info_encoder = self.encode(x, with_info=True)
         y, info_decoder = self.decode(z, with_info=True)
@@ -121,7 +128,7 @@ class AE1d(nn.Module):
         return (y, info) if with_info else y
 
     def encode(
-        self, x: Tensor, with_info: bool = False
+            self, x: Tensor, with_info: bool = False
     ) -> Union[Tensor, Tuple[Tensor, Any]]:
         return self.encoder(x, with_info=with_info)
 
@@ -142,25 +149,72 @@ class AutoEncoder_Speaker(nn.Module):
 
         self.bottleneck_dropout = nn.Dropout(p=cfg.model.bottleneck_dropout)
 
-        # the autoencoder's encoder output size is [1, 32, 8192]??
-        # this linear will learn from embedding sized input and will be added into the bottleneck
-        fake_input = torch.randn(1, 2, cfg.dataset.block_size)
-        with torch.no_grad():
-            fake_z = self.autoencoder.encode(fake_input)
+        # the autoencoder's encoder output size is [1, 32 channels, input//32]
+        # this lstm will learn from embedding sized input and will be fused into the bottleneck z
+        self.ae_channel_size = ae_config.channels
+        emb_size = 256
+        self.latent_slice_size = 256
+        lstm_layers = 1
 
-        out_feature_size = fake_z.size()[2]  # hmm, the outfeature size is inputlen/32.
+        self.accelerator = cfg.training.accelerator
 
-        # this linear shd be a lstm like layer, outputs /32 sized
+        device = torch.device(self.accelerator)
 
-        # self.linear = nn.Linear(in_features=256,
-        #                         out_features=out_feature_size)
-        #
-        # self.lstm = nn.LSTM(input_size=256,
-        #                     hidden_size=256,
-        #                     num_layers=1,
-        #                     bidirectional=True,
-        #                     batch_first=True)
+        # 32 ae_channel_size
+        self.lstms = [nn.LSTM(input_size=emb_size + self.latent_slice_size,
+                              hidden_size=self.latent_slice_size,
+                              num_layers=lstm_layers,
+                              bidirectional=True,
+                              batch_first=True).to(device) for _ in range(0, self.ae_channel_size)]
 
+        self.projections = [nn.Linear(in_features=self.latent_slice_size * 2,
+                                      out_features=self.latent_slice_size).to(device)
+                            for _ in range(0, self.ae_channel_size)]
+
+    def fuse_embedding(self, z, dvec):
+        # z is [b, 32 channels, xsize/32 ]
+        z_fuses = []
+
+        for i, lstm in enumerate(self.lstms):  # for each channel
+            z_channel = z[:, i, :]  # z_channel is [b, xsize/32]
+
+            # list of slices [ [b, latent_slice_size],...]
+            z_partials = torch.split(z_channel, self.latent_slice_size, dim=1)
+
+            z_partial_ins = []
+            # create sequences for lstm
+            for z_partial in z_partials:
+                z_partial_in = torch.cat([z_partial, dvec], dim=1)  # [b,latent_slice_size+256]
+                z_partial_ins.append(z_partial_in)
+
+            # tensor [b, num_z_partials ,latent_slice_size+256]
+            z_channel_emb_seq_in = torch.stack(z_partial_ins, dim=1)
+
+            # tensor [b, num_z_partials ,latent_slice_size*2] due to bidirectional
+            z_channel_emb_seq_out, (h, c) = lstm(z_channel_emb_seq_in)
+
+            # reproject to input dimensions
+            # list of slices [ [b , latent_slice_size],...]
+            projects = []
+            for z_i in range(0, z_channel_emb_seq_out.size()[1]):
+                # [b , latent_slice_size*2]
+                seq_z = z_channel_emb_seq_out[:, z_i, :]
+
+                # [b , latent_slice_size]
+                project = self.projections[i](seq_z)
+                projects.append(project)
+
+            # list of slices [ [b, num_z_partials , latent_slice_size]]
+            projected = torch.stack(projects, dim=1)
+
+            # tensor [b, xsize/32]
+            z_channel_emb_out = torch.flatten(projected, start_dim=1, end_dim=- 1)
+
+            z_fuses.append(z_channel_emb_out)
+
+        # z_fuses is list of [tensor [b, 1 , xsize/32]]
+        z_fused = torch.stack(z_fuses, dim=1)  # [b, 32 channels, xsize/32 ]
+        return z_fused
 
     def forward(self, x, dvec):
         with torch.no_grad():
@@ -169,18 +223,12 @@ class AutoEncoder_Speaker(nn.Module):
                 x = x.repeat(1, 2, 1)  # create stereo
             z = self.autoencoder.encode(x)
 
-        z = self.bottleneck_dropout(z)
+        z = self.bottleneck_dropout(z)  # [b, 32 channels, xsize/32 ]
 
-        # # learn the rest
-        # dvec = self.linear(dvec)
-        # dvec = torch.unsqueeze(dvec,1)
-        # dvec = dvec.repeat(1, 32, 1)
-        #
-        # # do addition into z
-        # z = z + dvec
+        z_fused = self.fuse_embedding(z, dvec)
 
-        # auto encoder encodes z with additive embedding
-        y_pred = self.autoencoder.decode(z)
+        # auto encoder encodes z fused with embedding
+        y_pred = self.autoencoder.decode(z_fused)
 
         return y_pred
 

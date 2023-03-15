@@ -1,5 +1,5 @@
 data_path: './data/processed/nus_vocalset_vctk'
 do_random_block: true
-block_size: 4096
-block_size_speaker: 4096
+block_size: 32768
+block_size_speaker: 32768
 sample_rate: 44100
