@@ -30,6 +30,7 @@ def main(cfg: DictConfig):
         model = AutoEncoder_PL(cfg)
     elif cfg.model.model_name == 'AutoEncoder_Speaker_PL':
         cfg.model.embedder_path = cur_path / Path(cfg.model.embedder_path)
+        cfg.model.ae_path = cur_path / Path(cfg.model.ae_path)
         model = AutoEncoder_Speaker_PL(cfg)
     else:
         assert False, " model name is invalid!"
