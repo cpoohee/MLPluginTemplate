@@ -38,14 +38,15 @@ class AutoEncoder_Speaker(nn.Module):
                 x = x.repeat(1, 2, 1)  # create stereo
             z = self.autoencoder.encode(x)
 
+        z = self.bottleneck_dropout(z)
 
-        # learn the rest
-        dvec = self.linear(dvec)
-        dvec = torch.unsqueeze(dvec,1)
-        dvec = dvec.repeat(1, 32, 1)
-
-        # do addition into z
-        z = z + dvec
+        # # learn the rest
+        # dvec = self.linear(dvec)
+        # dvec = torch.unsqueeze(dvec,1)
+        # dvec = dvec.repeat(1, 32, 1)
+        #
+        # # do addition into z
+        # z = z + dvec
 
         # auto encoder encodes z with additive embedding
         y_pred = self.autoencoder.decode(z)
