@@ -147,7 +147,7 @@ class WaveNet_PL(pl.LightningModule):
         return {"loss": loss, "log": logs}
 
     def _shared_eval_step(self, batch):
-        x, y, speaker, name = batch
+        x, y, dvec, name = batch
         y_pred = self.forward(x)
         return y, y_pred
 

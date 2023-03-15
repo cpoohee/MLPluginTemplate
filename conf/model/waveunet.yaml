@@ -1,3 +1,4 @@
 model_name: 'WaveUNet_PL' # WaveNet_PL, WaveUNet_PL, AutoEncoder_PL
 n_layers: 12
 channel_intervals: 24
+embedder_path: './models/pre-trained/voice_filter_embedder.pt'

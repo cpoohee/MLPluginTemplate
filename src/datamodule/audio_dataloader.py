@@ -1,7 +1,9 @@
+import numpy as np
 import torch
 import torchaudio
 import random
 import pandas as pd
+import torchaudio.transforms as T
 from torch.utils.data import Dataset
 from omegaconf import DictConfig
 from torch_audiomentations import (
@@ -9,6 +11,7 @@ from torch_audiomentations import (
     Shift, AddColoredNoise, PitchShift, LowPassFilter)
 from src.datamodule.augmentations.custom_pitchshift import PitchShift_Slow
 from src.datamodule.augmentations.random_crop import RandomCrop
+from src.model.speaker_encoder.speaker_embedder import SpeechEmbedder, AudioHelper
 
 
 class AudioDataset(Dataset):
@@ -67,6 +70,28 @@ class AudioDataset(Dataset):
         self.low_pass_p_x = cfg.augmentations.low_pass_p_x
 
         self.__initialise_augmentations()
+
+        # speech embedder
+        self.embedder = SpeechEmbedder()
+        chkpt_embed = torch.load(cfg.model.embedder_path, map_location=cfg.training.accelerator)
+        self.embedder.load_state_dict(chkpt_embed)
+        self.embedder.eval()
+        self.audio_helper = AudioHelper()
+
+        self.resampler = T.Resample(orig_freq=cfg.dataset.block_size_speaker,
+                                    new_freq=self.embedder.get_target_sample_rate())
+
+    def __get_embedding_vec(self, waveform_speaker):
+        # embedding d vec
+        waveform_speaker = self.resampler(waveform_speaker)  # resample to 16kHz
+
+        waveform_speaker_np = waveform_speaker.numpy(force=True)
+        waveform_speaker_np = np.squeeze(waveform_speaker_np)  # assumes mono already
+        dvec_mel = self.audio_helper.get_mel(waveform_speaker_np)  # helper works in numpy array
+        dvec_mel = torch.from_numpy(dvec_mel).float()  # get back to tensor
+        with torch.no_grad():
+            dvec = self.embedder(dvec_mel)
+            return dvec
 
     def set_random_crop(self, set):
         self.do_random_block = set
@@ -189,12 +214,12 @@ class AudioDataset(Dataset):
             waveform = self.apply_augmentation_crop_speaker(waveform, sample_rate=self.sample_rate)
         return waveform
 
-    def __padding(self, waveform):
+    def __padding(self, waveform, target_size):
         # do padding if file is too small
         length_x = waveform.size(dim=1)
         if length_x < self.sample_length:
             waveform = torch.nn.functional.pad(waveform,
-                                               (1, self.sample_length - length_x - 1),
+                                               (1, target_size - length_x - 1),
                                                "constant", 0)
         return waveform
 
@@ -209,8 +234,8 @@ class AudioDataset(Dataset):
         waveform_x, _ = torchaudio.load(x_path)
         waveform_speaker, _ = torchaudio.load(speaker_path)
 
-        waveform_x = self.__padding(waveform_x)
-        waveform_speaker = self.__padding(waveform_speaker)
+        waveform_x = self.__padding(waveform_x, self.block_size)
+        waveform_speaker = self.__padding(waveform_speaker, self.block_size_speaker)
 
         # 'batch' up waveforms x and y together
         waveform_x = torch.unsqueeze(waveform_x, dim=0)
@@ -243,11 +268,14 @@ class AudioDataset(Dataset):
             waveform_x = self.__process_augmentations_input_only(waveform_x)
             waveform_x = waveform_x[0]
 
-        waveform_x = self.__padding(waveform_x)
-        waveform_y = self.__padding(waveform_y)
-        waveform_speaker = self.__padding(waveform_speaker[0])
+        waveform_x = self.__padding(waveform_x, self.block_size)
+        waveform_y = self.__padding(waveform_y, self.block_size)
+        waveform_speaker = self.__padding(waveform_speaker[0], self.block_size_speaker)
+
+        # get speaker embeddings
+        dvec = self.__get_embedding_vec(waveform_speaker)
 
         # waveform_x = torch.cat((waveform_x, waveform_x), dim=0) # fake stereo
         # waveform_y = torch.cat((waveform_y, waveform_y), dim=0)
 
-        return waveform_x, waveform_y, waveform_speaker, speaker_name
+        return waveform_x, waveform_y, dvec, speaker_name

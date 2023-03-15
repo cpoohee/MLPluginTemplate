@@ -14,6 +14,7 @@ def main(cfg: DictConfig):
     data_path = cfg.dataset.data_path
 
     batch_size = cfg.training.batch_size
+    cfg.model.embedder_path = cur_path / Path(cfg.model.embedder_path)
     dm_train = AudioDataModule(data_dir=(cur_path/data_path),
                                cfg=cfg,
                                batch_size=batch_size)
@@ -21,11 +22,10 @@ def main(cfg: DictConfig):
     dm_train.setup(stage='fit')
 
     for i, batch in enumerate(dm_train.train_dataloader()):
-        x, y, speaker, name = batch
+        x, y, dvec, name = batch
         print('y')
         play_tensor(y[0])
-        print('speaker')
-        play_tensor(speaker[0])
+        print('speaker dvec:', dvec.size())
 
 
 def play_tensor(tensor_sample, sample_rate=44100):
