@@ -2,18 +2,143 @@ import torch
 import torch.nn as nn
 
 import pytorch_lightning as pl
+from torch import Tensor
 from omegaconf import DictConfig
 from src.utils.losses import Losses, PreEmphasisFilter
+from audio_encoders_pytorch import TanhBottleneck
+from audio_encoders_pytorch.modules import Encoder1d, Decoder1d, Bottleneck
+from audio_encoders_pytorch.utils import default, prefix_dict
+from typing import Any, List, Optional, Sequence, Tuple, Union
+from transformers import PreTrainedModel
+from transformers import PretrainedConfig
+
 from archisound import ArchiSound
-from src.model.speaker_encoder.speaker_embedder import AudioHelper
+
+bottleneck = { 'tanh': TanhBottleneck }
+
+
+class AutoEncoder1dConfig(PretrainedConfig):
+
+    model_type = "archinetai/autoencoder1d-AT-v1"
+
+    def __init__(
+        self,
+        in_channels: int = 2,
+        patch_size: int = 4,
+        channels: int = 32,
+        multipliers: Sequence[int] = [1, 2, 4, 8, 8, 8, 1],
+        factors: Sequence[int] = [2, 2, 2, 1, 1, 1],
+        num_blocks: Sequence[int] = [2, 2, 8, 8, 8, 8],
+        bottleneck: str = 'tanh',
+        **kwargs
+    ):
+        self.in_channels = in_channels
+        self.patch_size = patch_size
+        self.channels = channels
+        self.multipliers = multipliers
+        self.factors = factors
+        self.num_blocks = num_blocks
+        self.bottleneck = bottleneck
+        super().__init__(**kwargs)
+
+class AutoEncoder1d(PreTrainedModel):
+
+    config_class = AutoEncoder1dConfig
+
+    def __init__(self, config: AutoEncoder1dConfig):
+        super().__init__(config)
+
+        self.autoencoder = AE1d(
+            in_channels = config.in_channels,
+            patch_size = config.patch_size,
+            channels = config.channels,
+            multipliers = config.multipliers,
+            factors = config.factors,
+            num_blocks = config.num_blocks,
+            bottleneck = bottleneck[config.bottleneck]()
+        )
+
+    def forward(self, *args, **kwargs):
+        return self.autoencoder(*args, **kwargs)
+
+    def encode(self, *args, **kwargs):
+        return self.autoencoder.encode(*args, **kwargs)
+
+    def decode(self, *args, **kwargs):
+        return self.autoencoder.decode(*args, **kwargs)
+
+
+class AE1d(nn.Module):
+    def __init__(
+        self,
+        in_channels: int,
+        channels: int,
+        multipliers: Sequence[int],
+        factors: Sequence[int],
+        num_blocks: Sequence[int],
+        patch_size: int = 1,
+        resnet_groups: int = 8,
+        out_channels: Optional[int] = None,
+        bottleneck: Union[Bottleneck, List[Bottleneck]] = [],
+        bottleneck_channels: Optional[int] = None,
+    ):
+        super().__init__()
+        out_channels = default(out_channels, in_channels)
+
+        self.encoder = Encoder1d(
+            in_channels=in_channels,
+            out_channels=bottleneck_channels,
+            channels=channels,
+            multipliers=multipliers,
+            factors=factors,
+            num_blocks=num_blocks,
+            patch_size=patch_size,
+            resnet_groups=resnet_groups,
+            bottleneck=bottleneck,
+        )
+
+        self.decoder = Decoder1d(
+            in_channels=bottleneck_channels,
+            out_channels=out_channels,
+            channels=channels,
+            multipliers=multipliers[::-1],
+            factors=factors[::-1],
+            num_blocks=num_blocks[::-1],
+            patch_size=patch_size,
+            resnet_groups=resnet_groups,
+        )
+
+    def forward(
+        self, x: Tensor, with_info: bool = False
+    ) -> Union[Tensor, Tuple[Tensor, Any]]:
+        z, info_encoder = self.encode(x, with_info=True)
+        y, info_decoder = self.decode(z, with_info=True)
+        info = {
+            **dict(latent=z),
+            **prefix_dict("encoder_", info_encoder),
+            **prefix_dict("decoder_", info_decoder),
+        }
+        return (y, info) if with_info else y
+
+    def encode(
+        self, x: Tensor, with_info: bool = False
+    ) -> Union[Tensor, Tuple[Tensor, Any]]:
+        return self.encoder(x, with_info=with_info)
+
+    def decode(self, x: Tensor, with_info: bool = False) -> Tensor:
+        return self.decoder(x, with_info=with_info)
 
 
 class AutoEncoder_Speaker(nn.Module):
     def __init__(self, cfg):
         super(AutoEncoder_Speaker, self).__init__()
 
+        ae_config = AutoEncoder1dConfig()
+        self.autoencoder = AutoEncoder1d(ae_config)
+        self.autoencoder = self.autoencoder.from_pretrained(cfg.model.ae_path)
+
         # auto encoder
-        self.autoencoder = ArchiSound.from_pretrained("autoencoder1d-AT-v1")
+        # self.autoencoder = ArchiSound.from_pretrained("autoencoder1d-AT-v1")
 
         self.bottleneck_dropout = nn.Dropout(p=cfg.model.bottleneck_dropout)
 
@@ -23,12 +148,18 @@ class AutoEncoder_Speaker(nn.Module):
         with torch.no_grad():
             fake_z = self.autoencoder.encode(fake_input)
 
-        out_feature_size = fake_z.size()[2] # hmm, the outfeature size is inputlen/32.
+        out_feature_size = fake_z.size()[2]  # hmm, the outfeature size is inputlen/32.
 
         # this linear shd be a lstm like layer, outputs /32 sized
 
-        self.linear = nn.Linear(in_features=256,
-                                out_features=out_feature_size)
+        # self.linear = nn.Linear(in_features=256,
+        #                         out_features=out_feature_size)
+        #
+        # self.lstm = nn.LSTM(input_size=256,
+        #                     hidden_size=256,
+        #                     num_layers=1,
+        #                     bidirectional=True,
+        #                     batch_first=True)
 
 
     def forward(self, x, dvec):
