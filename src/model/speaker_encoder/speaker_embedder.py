@@ -48,7 +48,7 @@ class SpeechEmbedder(nn.Module):
     def forward(self, mel):
         # (num_mels, T)
         mels = mel.unfold(1, self.window,
-                              self.stride)  # (num_mels, T', window)
+                          self.stride)  # (num_mels, T', window)
         mels = mels.permute(1, 2, 0)  # (T', window, num_mels)
         x, _ = self.lstm(mels)  # (T', window, lstm_hidden)
         x = x[:, -1, :]  # (T', lstm_hidden), use last frame only
@@ -68,6 +68,20 @@ class AudioHelper:
         self.mel_basis = librosa.filters.mel(sr=self.sample_rate,
                                              n_fft=self.n_fft,
                                              n_mels=self.num_mels)
+
+        # somehow, torch's melscale is not close enough
+        self.mel_basis_np = torch.from_numpy(self.mel_basis)
+
+        # self.mel_basis_torch = F.melscale_fbanks(
+        #     int(self.n_fft // 2 + 1),
+        #     n_mels=self.num_mels,
+        #     f_min=0.0,
+        #     f_max=self.sample_rate / 2.0,
+        #     sample_rate=self.sample_rate,
+        #     norm="slaney",
+        # )
+
+        self.hann_window = torch.hann_window(window_length=self.win_length)
 
     def init_hp(self):
         self.num_mels = 40
@@ -93,9 +107,18 @@ class AudioHelper:
                               hop_length=self.hop_length,
                               win_length=self.win_length,
                               window='hann')
-        magnitudes = np.abs(y) ** 2
-        mel = np.log10(np.dot(self.mel_basis, magnitudes) + 1e-6)
-        return mel
+        magnitudes = np.abs(y) ** 2  # [601,101]
+        dot_prod = np.dot(self.mel_basis, magnitudes)  # [40, 601]. [601,101] = [40, 101] # [40, 601]. [601,101] = [40, 101]
+        mel = np.log10(dot_prod + 1e-6)  # [40, 101]
+        return mel, magnitudes, dot_prod
+
+    def get_mel_torch(self, y):
+        y = self.stft_torch(y)
+        y = torch.abs(y)
+        magnitudes = torch.pow(y, 2)  # [601,101]
+        dot_prod = torch.matmul(self.mel_basis_np, magnitudes)  # [40, 601]. [601,101] = [40, 101]
+        mel = torch.log10(dot_prod + 1e-6)  # [40, 101]
+        return mel, magnitudes, dot_prod
 
     def wav2spec(self, y):
         D = self.stft(y)
@@ -116,6 +139,18 @@ class AudioHelper:
         return librosa.stft(y=y, n_fft=self.n_fft,
                             hop_length=self.hop_length,
                             win_length=self.win_length)
+
+    def stft_torch(self, y):
+        stft = torch.stft(y,
+                          n_fft=self.n_fft,
+                          hop_length=self.hop_length,
+                          win_length=self.win_length,
+                          center=True,
+                          pad_mode='constant',
+                          window=self.hann_window,
+                          return_complex=True)
+
+        return stft
 
     def istft(self, mag, phase):
         stft_matrix = mag * np.exp(1j * phase)
