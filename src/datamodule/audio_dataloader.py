@@ -281,7 +281,7 @@ class AudioDataset(Dataset):
         waveform_speaker = self.__padding(waveform_speaker[0], self.block_size_speaker)
 
         # get speaker embeddings
-        if self.self.model_name == 'AutoEncoder_Speaker_PL':
+        if self.model_name == 'AutoEncoder_Speaker_PL':
             dvec = self.__get_embedding_vec(waveform_speaker)
         else:
             dvec = waveform_speaker
