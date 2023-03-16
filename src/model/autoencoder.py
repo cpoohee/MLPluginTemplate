@@ -43,6 +43,9 @@ class AutoEncoder_PL(pl.LightningModule):
         if self.loss_preemphasis_aw_filter:
             self.aw_filter = PreEmphasisFilter(type='aw')
 
+        self.val_step_outputs = []
+        self.test_step_outputs = []
+
     def configure_optimizers(self):
         return torch.optim.Adam(self.autoencoder.parameters(), lr=self.lr)
 
@@ -75,10 +78,11 @@ class AutoEncoder_PL(pl.LightningModule):
         loss = self._lossfn(y, y_pred)
         return {"val_loss": loss}
 
-    def validation_epoch_end(self, outs):
-        avg_loss = torch.stack([x["val_loss"] for x in outs]).mean()
+    def on_validation_epoch_end(self):
+        avg_loss = torch.stack(self.val_step_outputs).mean()
         logs = {"val_loss": avg_loss}
         self.log("val_loss_epoch", avg_loss)
+        self.val_step_outputs.clear()
         return {"avg_val_loss": avg_loss, "log": logs}
 
     def test_step(self, batch, batch_idx):
@@ -86,10 +90,11 @@ class AutoEncoder_PL(pl.LightningModule):
         loss = self._lossfn(y, y_pred)
         return {"test_loss": loss}
 
-    def test_epoch_end(self, outs):
-        avg_loss = torch.stack([x["test_loss"] for x in outs]).mean()
+    def on_test_epoch_end(self):
+        avg_loss = torch.stack(self.test_step_outputs).mean()
         logs = {"test_loss": avg_loss}
         self.log("test_loss_epoch", avg_loss)
+        self.test_step_outputs.clear()
         return {"avg_test_loss": avg_loss, "log": logs}
 
     def predict_step(self, batch, batch_idx):

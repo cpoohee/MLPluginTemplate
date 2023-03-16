@@ -1,7 +1,7 @@
 numpy==1.23.5
-pytorch-lightning==1.9.3
-torchvision==0.14.1
-torchaudio==0.13.1
+pytorch-lightning==2.0
+torchvision==0.15
+torchaudio==2.0
 gdown==4.6.4
 progressbar==2.5
 tqdm==4.64.1
@@ -16,7 +16,7 @@ simpleaudio==1.0.4
 auraloss==0.3.0
 onnx==1.13.0
 onnxruntime==1.13.1
-mlflow
+mlflow==2.2.2
 seaborn
 librosa
 matplotlib
