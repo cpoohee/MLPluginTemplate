@@ -2,8 +2,8 @@ defaults:
   - loss: mr_loss_small
 
 batch_size: 32
-learning_rate: 0.0003
-max_epochs: 300
+learning_rate: 0.01
+max_epochs: 30
 check_val_every_n_epoch: 10
 accelerator: mps # "cpu", "gpu", "tpu", "ipu", "auto"
 num_workers: 6 # number of workers for training dataloader

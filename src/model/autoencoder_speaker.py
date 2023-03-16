@@ -144,6 +144,14 @@ class AutoEncoder_Speaker(nn.Module):
         self.autoencoder = AutoEncoder1d(ae_config)
         self.autoencoder = self.autoencoder.from_pretrained(cfg.model.ae_path)
 
+        if cfg.model.freeze_encoder:
+            for p in self.autoencoder.autoencoder.encoder.parameters():
+                p.requires_grad = False
+
+        if cfg.model.freeze_decoder:
+            for p in self.autoencoder.autoencoder.decoder.parameters():
+                p.requires_grad = False
+
         # auto encoder
         # self.autoencoder = ArchiSound.from_pretrained("autoencoder1d-AT-v1")
 
@@ -156,20 +164,17 @@ class AutoEncoder_Speaker(nn.Module):
         self.latent_slice_size = 256
         lstm_layers = 1
 
-        self.accelerator = cfg.training.accelerator
-
-        device = torch.device(self.accelerator)
-
         # 32 ae_channel_size
-        self.lstms = [nn.LSTM(input_size=emb_size + self.latent_slice_size,
-                              hidden_size=self.latent_slice_size,
-                              num_layers=lstm_layers,
-                              bidirectional=True,
-                              batch_first=True).to(device) for _ in range(0, self.ae_channel_size)]
+        self.lstms = nn.ModuleList([nn.LSTM(input_size=emb_size + self.latent_slice_size,
+                                            hidden_size=self.latent_slice_size,
+                                            num_layers=lstm_layers,
+                                            bidirectional=True,
+                                            batch_first=True) for _ in
+                                    range(0, self.ae_channel_size)])
 
-        self.projections = [nn.Linear(in_features=self.latent_slice_size * 2,
-                                      out_features=self.latent_slice_size).to(device)
-                            for _ in range(0, self.ae_channel_size)]
+        self.projections = nn.ModuleList([nn.Linear(in_features=self.latent_slice_size * 2,
+                                                    out_features=self.latent_slice_size)
+                                          for _ in range(0, self.ae_channel_size)])
 
     def fuse_embedding(self, z, dvec):
         # z is [b, 32 channels, xsize/32 ]
@@ -261,7 +266,15 @@ class AutoEncoder_Speaker_PL(pl.LightningModule):
             self.aw_filter = PreEmphasisFilter(type='aw')
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.autoencoder.parameters(), lr=self.lr)
+        all_params = self.autoencoder.parameters()
+        # learn_list = []
+        # for lstm in self.autoencoder.lstms:
+        #     learn_list += list(lstm.parameters())
+        #
+        # for proj in self.autoencoder.projections:
+        #     learn_list += list(proj.parameters())
+
+        return torch.optim.Adam(all_params, lr=self.lr)
 
     def forward(self, x, speaker):
         return self.autoencoder(x, speaker)
@@ -280,6 +293,7 @@ class AutoEncoder_Speaker_PL(pl.LightningModule):
         loss = self._lossfn(y, y_pred)
         logs = {"loss": loss}
         self.log("train_loss", loss, on_epoch=True, on_step=False)
+        print(self.autoencoder.projections[0].weight)
         return {"loss": loss, "log": logs}
 
     def _shared_eval_step(self, batch):

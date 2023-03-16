@@ -1,4 +1,6 @@
 model_name: 'AutoEncoder_Speaker_PL' # WaveNet_PL, WaveUNet_PL, AutoEncoder_PL
 embedder_path: './models/pre-trained/voice_filter_embedder.pt'
 ae_path: './models/pre-trained/ae'
-bottleneck_dropout: 0.005
+bottleneck_dropout: 0.000
+freeze_encoder: true
+freeze_decoder: true
