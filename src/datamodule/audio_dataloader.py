@@ -225,7 +225,7 @@ class AudioDataset(Dataset):
     def __padding(self, waveform, target_size):
         # do padding if file is too small
         length_x = waveform.size(dim=1)
-        if length_x < self.sample_length:
+        if length_x < target_size:
             waveform = torch.nn.functional.pad(waveform,
                                                (1, target_size - length_x - 1),
                                                "constant", 0)
