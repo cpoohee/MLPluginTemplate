@@ -161,7 +161,7 @@ class AutoEncoder_Speaker(nn.Module):
         # this lstm will learn from embedding sized input and will be fused into the bottleneck z
         self.ae_channel_size = ae_config.channels
         emb_size = 256
-        self.latent_slice_size = 256
+        self.latent_slice_size = 32
         lstm_layers = 1
 
         # 32 ae_channel_size
@@ -230,10 +230,16 @@ class AutoEncoder_Speaker(nn.Module):
 
         z = self.bottleneck_dropout(z)  # [b, 32 channels, xsize/32 ]
 
-        z_fused = self.fuse_embedding(z, dvec)
+        z_fused = self.fuse_embedding(z, dvec) + z  # skip connection
+
+        # z_fused = z
 
         # auto encoder encodes z fused with embedding
         y_pred = self.autoencoder.decode(z_fused)
+
+        # sum to mono
+        if y_pred.size()[1] == 2:
+            y_pred = torch.sum(y_pred, dim=1, keepdim=True)
 
         return y_pred
 
