@@ -65,7 +65,7 @@ class AutoEncoder_PL(pl.LightningModule):
         y, y_pred = self._shared_eval_step(batch)
         loss = self._lossfn(y, y_pred)
         logs = {"loss": loss}
-        self.log("train_loss", loss, on_epoch=True, on_step=False)
+        self.log("train_loss", loss, on_epoch=True, on_step=True, prog_bar=True)
         return {"loss": loss, "log": logs}
 
     def _shared_eval_step(self, batch):
