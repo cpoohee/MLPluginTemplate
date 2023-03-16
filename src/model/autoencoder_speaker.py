@@ -293,7 +293,7 @@ class AutoEncoder_Speaker_PL(pl.LightningModule):
         loss = self._lossfn(y, y_pred)
         logs = {"loss": loss}
         self.log("train_loss", loss, on_epoch=True, on_step=False)
-        print(self.autoencoder.projections[0].weight)
+        # print(self.autoencoder.projections[0].weight)
         return {"loss": loss, "log": logs}
 
     def _shared_eval_step(self, batch):
