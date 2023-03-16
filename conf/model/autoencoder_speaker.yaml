@@ -4,3 +4,6 @@ ae_path: './models/pre-trained/ae'
 bottleneck_dropout: 0.000
 freeze_encoder: true
 freeze_decoder: true
+emb_size: 256
+latent_slice_size: 32
+lstm_layers: 1

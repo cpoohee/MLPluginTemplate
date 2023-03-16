@@ -3,6 +3,8 @@ import os
 import mlflow
 import pytorch_lightning as pl
 from pathlib import Path
+
+import torch
 from omegaconf import DictConfig
 from src.datamodule.audio_datamodule import AudioDataModule
 from src.model.wavenet import WaveNet_PL
@@ -11,6 +13,7 @@ from src.model.autoencoder import AutoEncoder_PL
 from src.model.autoencoder_speaker import AutoEncoder_Speaker_PL
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import MLFlowLogger
+
 
 @hydra.main(config_path="../conf", config_name="config")
 def main(cfg: DictConfig):
@@ -35,6 +38,7 @@ def main(cfg: DictConfig):
     else:
         assert False, " model name is invalid!"
 
+    # model = torch.compile(model)
 
     mlflow.pytorch.autolog()
 

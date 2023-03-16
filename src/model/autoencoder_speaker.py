@@ -152,6 +152,8 @@ class AutoEncoder_Speaker(nn.Module):
             for p in self.autoencoder.autoencoder.decoder.parameters():
                 p.requires_grad = False
 
+        self.autoencoder = torch.compile(self.autoencoder)
+
         # auto encoder
         # self.autoencoder = ArchiSound.from_pretrained("autoencoder1d-AT-v1")
 
@@ -160,9 +162,9 @@ class AutoEncoder_Speaker(nn.Module):
         # the autoencoder's encoder output size is [1, 32 channels, input//32]
         # this lstm will learn from embedding sized input and will be fused into the bottleneck z
         self.ae_channel_size = ae_config.channels
-        emb_size = 256
-        self.latent_slice_size = 32
-        lstm_layers = 1
+        emb_size = cfg.model.emb_size
+        self.latent_slice_size = cfg.model.latent_slice_size
+        lstm_layers = cfg.model.lstm_layers
 
         # 32 ae_channel_size
         self.lstms = nn.ModuleList([nn.LSTM(input_size=emb_size + self.latent_slice_size,
@@ -271,6 +273,9 @@ class AutoEncoder_Speaker_PL(pl.LightningModule):
         if self.loss_preemphasis_aw_filter:
             self.aw_filter = PreEmphasisFilter(type='aw')
 
+        self.val_step_outputs = []
+        self.test_step_outputs = []
+
     def configure_optimizers(self):
         all_params = self.autoencoder.parameters()
         # learn_list = []
@@ -282,8 +287,8 @@ class AutoEncoder_Speaker_PL(pl.LightningModule):
 
         return torch.optim.Adam(all_params, lr=self.lr)
 
-    def forward(self, x, speaker):
-        return self.autoencoder(x, speaker)
+    def forward(self, x, dvec):
+        return self.autoencoder(x, dvec)
 
     def _lossfn(self, y, y_pred):
         if self.loss_preemphasis_hp_filter:
@@ -310,23 +315,27 @@ class AutoEncoder_Speaker_PL(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         y, y_pred = self._shared_eval_step(batch)
         loss = self._lossfn(y, y_pred)
+        self.val_step_outputs.append(loss)
         return {"val_loss": loss}
 
-    def validation_epoch_end(self, outs):
-        avg_loss = torch.stack([x["val_loss"] for x in outs]).mean()
+    def on_validation_epoch_end(self):
+        avg_loss = torch.stack(self.val_step_outputs).mean()
         logs = {"val_loss": avg_loss}
         self.log("val_loss_epoch", avg_loss)
+        self.val_step_outputs.clear()
         return {"avg_val_loss": avg_loss, "log": logs}
 
     def test_step(self, batch, batch_idx):
         y, y_pred = self._shared_eval_step(batch)
         loss = self._lossfn(y, y_pred)
+        self.test_step_outputs.append(loss)
         return {"test_loss": loss}
 
-    def test_epoch_end(self, outs):
-        avg_loss = torch.stack([x["test_loss"] for x in outs]).mean()
+    def on_test_epoch_end(self):
+        avg_loss = torch.stack(self.test_step_outputs).mean()
         logs = {"test_loss": avg_loss}
         self.log("test_loss_epoch", avg_loss)
+        self.test_step_outputs.clear()
         return {"avg_test_loss": avg_loss, "log": logs}
 
     def predict_step(self, batch, batch_idx):
