@@ -28,7 +28,6 @@ def main(cfg: DictConfig):
     dm_pred = AudioDataModule(data_dir=(cur_path / data_path),
                               cfg=cfg,
                               do_aug_in_predict=cfg.testing.do_aug_in_predict,
-                              # allow low passed input
                               batch_size=1)
 
     mlflow.pytorch.autolog()

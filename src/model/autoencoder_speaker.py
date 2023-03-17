@@ -226,8 +226,9 @@ class AutoEncoder_Speaker(nn.Module):
     def forward(self, x, dvec):
         with torch.no_grad():
             # auto encoder encodes
-            if x.size()[1] == 1:  # mono
-                x = x.repeat(1, 2, 1)  # create stereo
+            # force sum to mono, then create stereo
+            x = torch.sum(x, dim=1, keepdim=True)
+            x = x.repeat(1, 2, 1)  # create stereo
             z = self.autoencoder.encode(x)
 
         z = self.bottleneck_dropout(z)  # [b, 32 channels, xsize/32 ]
@@ -240,8 +241,7 @@ class AutoEncoder_Speaker(nn.Module):
         y_pred = self.autoencoder.decode(z_fused)
 
         # sum to mono
-        if y_pred.size()[1] == 2:
-            y_pred = torch.sum(y_pred, dim=1, keepdim=True)
+        y_pred = torch.sum(y_pred, dim=1, keepdim=True)
 
         return y_pred
 
@@ -278,13 +278,6 @@ class AutoEncoder_Speaker_PL(pl.LightningModule):
 
     def configure_optimizers(self):
         all_params = self.autoencoder.parameters()
-        # learn_list = []
-        # for lstm in self.autoencoder.lstms:
-        #     learn_list += list(lstm.parameters())
-        #
-        # for proj in self.autoencoder.projections:
-        #     learn_list += list(proj.parameters())
-
         return torch.optim.Adam(all_params, lr=self.lr)
 
     def forward(self, x, dvec):

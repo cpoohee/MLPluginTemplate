@@ -10,16 +10,16 @@ accelerator: mps # "cpu", "gpu", "tpu", "ipu", "auto"
 num_workers: 6 # number of workers for training dataloader
 continue_test: true
 
-lossfn: 'MSELoss' # error_to_signal, ESRLoss, DCLoss, LogCoshLoss, SNRLoss, SDSDRLoss, MSELoss, DC_SDSDR_SNR_Loss, STFTLoss, MelSTFTLoss, MultiResolutionSTFTLoss, RandomResolutionSTFTLoss
+lossfn: 'DC_SDSDR_SNR_Loss' # error_to_signal, ESRLoss, DCLoss, LogCoshLoss, SNRLoss, SDSDRLoss, MSELoss, DC_SDSDR_SNR_Loss, STFTLoss, MelSTFTLoss, MultiResolutionSTFTLoss, RandomResolutionSTFTLoss
 loss_preemphasis_hp_filter: false
 loss_preemphasis_hp_coeff: 0.95
 loss_preemphasis_aw_filter: false
 
 
-experiment_name: 'auto_MSELoss'
+experiment_name: 'auto_DC_SDSDR_SNR_Loss'
 
 
-resume_checkpoint: false
+resume_checkpoint: true
 checkpoint_file: './outputs/2023-03-07/13-31-27/models/wavenet_aug_MultiResolutionSTFTLoss epoch=589.ckpt'
 
 use_checkpoint_callback: true

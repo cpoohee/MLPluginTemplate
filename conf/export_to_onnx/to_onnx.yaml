@@ -1,5 +1,5 @@
-checkpoint_file: './models/waveunet_aug_mrLoss.ckpt'
-model: 'waveunet'
+checkpoint_file: './models/archive/2023-03-17/08-31-50/models/auto_MSELoss epoch=9.ckpt'
+model: 'AutoEncoder_Speaker_PL'
 
-export_filename: './models/onnx/waveunet_aug_mrLoss.onnx'
-sample_block_size: 1024 # check dataset blocksize during training, it should be matching
+export_filename: './models/onnx/ae_speech.onnx'
+sample_block_size: 131072 # check dataset blocksize during training, it should be matching
