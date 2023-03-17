@@ -237,10 +237,17 @@ class AudioDataset(Dataset):
         speaker_name = data['speaker_name']
         related_speakers = data['related_speakers']
         id_other = random.choice(related_speakers)
-        speaker_path = self.df.iloc[id_other].x
+
+        unrelated_speakers = [i for i in range(0, len(self.df)) if i not in related_speakers]
+        unrelated_speakers.remove(idx)
+
+        id_other_unrelated = random.choice(unrelated_speakers)
+        unrelated_speaker_path = self.df.iloc[id_other_unrelated].x
+
+        # speaker_path = self.df.iloc[id_other].x
 
         waveform_x, _ = torchaudio.load(x_path)
-        waveform_speaker, _ = torchaudio.load(speaker_path)
+        waveform_speaker, _ = torchaudio.load(unrelated_speaker_path)
 
         waveform_x = self.__padding(waveform_x, self.block_size)
         waveform_speaker = self.__padding(waveform_speaker, self.block_size_speaker)

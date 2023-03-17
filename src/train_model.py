@@ -66,7 +66,7 @@ def main(cfg: DictConfig):
     )
 
     if cfg.training.resume_checkpoint:
-        ckpt_path = cfg.training.checkpoint_file
+        ckpt_path = cur_path / Path(cfg.training.checkpoint_file)
     else:
         ckpt_path = None
 

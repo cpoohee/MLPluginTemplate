@@ -1,8 +1,9 @@
 import torch
 import auraloss
+import torchaudio.transforms as T
 from omegaconf import DictConfig, OmegaConf
 from auraloss.utils import apply_reduction
-
+from src.model.speaker_encoder.speaker_embedder import SpeechEmbedder, AudioHelper
 
 class ESRLossORG(torch.nn.Module):
     """
@@ -39,16 +40,69 @@ class PreEmphasisFilter(torch.nn.Module):
 
     def forward(self, input, target):
         if self.type == 'hp':
-            y = self.pre_emphasis_filter(input, self.coeff)
-            y_pred = self.pre_emphasis_filter(target, self.coeff)
-            return y, y_pred
+            y_pred = self.pre_emphasis_filter(input, self.coeff)
+            y = self.pre_emphasis_filter(target, self.coeff)
+            return y_pred, y
 
         elif self.type == 'aw':
-            y, y_pred = self.aw(input, target)
-            return y, y_pred
+            y_pred, y  = self.aw(input, target)
+            return y_pred, y
 
     def pre_emphasis_filter(self, x, coeff):
         return torch.cat((x[:, :, 0:1], x[:, :, 1:] - coeff * x[:, :, :-1]), dim=2)
+
+
+class EMBLoss(torch.nn.Module):
+    """
+    MSE loss of the speaker embeddings. uses predicted waveform to generate new speaker embeddings,
+    which is then compared against target speaker embedding.
+    """
+    def __init__(self, cfg):
+        super(EMBLoss, self).__init__()
+        self.embedder = SpeechEmbedder()
+        chkpt_embed = torch.load(cfg.model.embedder_path, map_location=cfg.training.accelerator)
+        self.embedder.load_state_dict(chkpt_embed)
+        for p in self.embedder.parameters():
+            p.requires_grad = False
+
+        self.audio_helper = AudioHelper()
+
+        # try to be as close as librosa's resampling
+        self.resampler = T.Resample(orig_freq=cfg.dataset.block_size_speaker,
+                                    new_freq=self.embedder.get_target_sample_rate(),
+                                    lowpass_filter_width=64,
+                                    rolloff=0.9475937167399596,
+                                    resampling_method="sinc_interp_kaiser",
+                                    beta=14.769656459379492,
+                                    )
+
+        self.loss = torch.nn.MSELoss()
+
+    def forward(self, pred, target_dvec):
+        pred_dvec = self.__get_embedding_vec(pred)
+        return self.loss(pred_dvec, target_dvec)
+
+    def __get_embedding_vec(self, waveform_speaker):
+        # embedding d vec
+        waveform_speaker = self.resampler(waveform_speaker)  # resample to 16kHz
+        waveform_speaker = waveform_speaker.squeeze()  # [16000]
+
+        org_dev = waveform_speaker.device
+        cpudevice = torch.device('cpu')
+        waveform_speaker = waveform_speaker.to(cpudevice)
+        dvec_mel, _, _ = self.audio_helper.get_mel_torch(waveform_speaker)
+
+        dvec_mel = dvec_mel.to(org_dev)
+
+        dvecs = []
+
+        for i in range(0, dvec_mel.size()[0]):
+            dvec = self.embedder(dvec_mel[i]) # embedder functions in one batch
+            dvecs.append(dvec)
+
+        dvecs = torch.stack(dvecs, dim=0)
+
+        return dvecs
 
 
 class Losses(torch.nn.Module):
@@ -141,6 +195,9 @@ class Losses(torch.nn.Module):
         elif loss_type == 'ESR_DC_Loss':
             self.lossDC = auraloss.time.DCLoss()
             self.lossESR = auraloss.time.ESRLoss()
+
+        elif loss_type == 'EMBLoss':
+            self.loss = EMBLoss(self.cfg)
 
         else:
             assert False

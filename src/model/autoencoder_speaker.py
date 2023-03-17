@@ -265,7 +265,8 @@ class AutoEncoder_Speaker_PL(pl.LightningModule):
         see types of losses
         https://github.com/csteinmetz1/auraloss
         """
-        self.loss = Losses(loss_type=cfg.training.lossfn, sample_rate=cfg.dataset.sample_rate)
+        self.loss_type = cfg.training.lossfn
+        self.loss = Losses(loss_type=self.loss_type, sample_rate=cfg.dataset.sample_rate, cfg=self.cfg)
 
         if self.loss_preemphasis_hp_filter:
             self.fir_filter = PreEmphasisFilter(coeff=self.loss_preemphasis_hp_coeff)
@@ -283,18 +284,21 @@ class AutoEncoder_Speaker_PL(pl.LightningModule):
     def forward(self, x, dvec):
         return self.autoencoder(x, dvec)
 
-    def _lossfn(self, y, y_pred):
+    def _lossfn(self, y_pred, y, dvec):
         if self.loss_preemphasis_hp_filter:
-            y, y_pred = self.fir_filter(y, y_pred)
+            y_pred, y = self.fir_filter(y_pred, y)
 
         if self.loss_preemphasis_aw_filter:
-            y, y_pred = self.aw_filter(y, y_pred)
+            y_pred, y = self.aw_filter(y_pred, y)
 
-        return self.loss(y, y_pred)
+        if self.loss_type == 'EMBLoss':
+            return  self.loss(y_pred, dvec)
+
+        return self.loss(y_pred, y)
 
     def training_step(self, batch, batch_idx):
-        y, y_pred = self._shared_eval_step(batch)
-        loss = self._lossfn(y, y_pred)
+        y, y_pred, dvec, name = self._shared_eval_step(batch)
+        loss = self._lossfn(y_pred, y, dvec)
         logs = {"loss": loss}
         self.log("train_loss", loss, on_epoch=True, on_step=True, prog_bar=True)
         # print(self.autoencoder.projections[0].weight)
@@ -303,11 +307,11 @@ class AutoEncoder_Speaker_PL(pl.LightningModule):
     def _shared_eval_step(self, batch):
         x, y, dvec, name = batch
         y_pred = self.forward(x, dvec)
-        return y, y_pred
+        return y, y_pred, dvec, name
 
     def validation_step(self, batch, batch_idx):
-        y, y_pred = self._shared_eval_step(batch)
-        loss = self._lossfn(y, y_pred)
+        y, y_pred, dvec, name = self._shared_eval_step(batch)
+        loss = self._lossfn(y_pred, y, dvec)
         self.val_step_outputs.append(loss)
         return {"val_loss": loss}
 
@@ -319,8 +323,8 @@ class AutoEncoder_Speaker_PL(pl.LightningModule):
         return {"avg_val_loss": avg_loss, "log": logs}
 
     def test_step(self, batch, batch_idx):
-        y, y_pred = self._shared_eval_step(batch)
-        loss = self._lossfn(y, y_pred)
+        y, y_pred, dvec, name = self._shared_eval_step(batch)
+        loss = self._lossfn(y_pred, y, dvec)
         self.test_step_outputs.append(loss)
         return {"test_loss": loss}
 
@@ -332,5 +336,5 @@ class AutoEncoder_Speaker_PL(pl.LightningModule):
         return {"avg_test_loss": avg_loss, "log": logs}
 
     def predict_step(self, batch, batch_idx):
-        y, y_pred = self._shared_eval_step(batch)
-        return y, y_pred
+        y, y_pred, dvec, name = self._shared_eval_step(batch)
+        return y_pred
