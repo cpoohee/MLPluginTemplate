@@ -7,9 +7,9 @@ from tqdm import tqdm
 
 def main():
     downlaod_archisound_ae()
-    # download_rtvc()
-    # download_vctk_ae()
-    # download_vf()
+    download_rtvc()
+    download_vctk_ae()
+    download_vf()
 
 def downlaod_archisound_ae():
     root_path = Path(os.path.abspath(os.getcwd()))
@@ -62,6 +62,8 @@ def download_vf():
         Path.mkdir(root_path / pre_trained_path)
 
     vf_path = pre_trained_path / 'voice_filter_embedder.pt'
+
+    # see https://github.com/mindslab-ai/voicefilter
 
     vf_gdrive_link = 'https://drive.google.com/file/d/1YFmhmUok-W76JkrfA0fzQt3c-ZsfiwfL/view?usp=sharing'
     gdown.download(url=vf_gdrive_link, quiet=False, output=vf_path.as_posix(), fuzzy=True)

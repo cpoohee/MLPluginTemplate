@@ -14,6 +14,9 @@ class LinearNorm(nn.Module):
 
 
 class SpeechEmbedder(nn.Module):
+    """
+    see https://github.com/mindslab-ai/voicefilter
+    """
     def __init__(self):
         super(SpeechEmbedder, self).__init__()
         self.init_hp()
