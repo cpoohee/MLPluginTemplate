@@ -62,7 +62,7 @@ def main(cfg: DictConfig):
 
     with torch.no_grad():
         for batch in tqdm(dm_pred, desc=" predict progress", position=0):
-            x, y, dvec, name = batch
+            x, y, (dvec, dvec_unrelated), (name, name_unrelated) = batch
 
             if x.device != dev:
                 x = x.to(dev)
@@ -70,24 +70,55 @@ def main(cfg: DictConfig):
                 y = y.to(dev)
             if dvec.device != dev:
                 dvec = dvec.to(dev)
+            if dvec_unrelated is not None and dvec_unrelated != dev:
+                dvec_unrelated = dvec_unrelated.to(dev)
 
             segments = x.size()[2] // cfg.dataset.block_size
             resized_samples = segments * cfg.dataset.block_size
             x = x[:, :, 0:resized_samples]
             y = y[:, :, 0:resized_samples]
 
-            y_pred = torch.zeros_like(y)
+            if dvec_unrelated is None:
+                # do predict without dvec
+                y_pred = torch.zeros_like(y)
+                for i in tqdm(range(0, segments), desc=" sample progress", position=1, leave=False):
+                    offsets = i * cfg.dataset.block_size
+                    x_segment = x[:, :, offsets: (offsets + cfg.dataset.block_size)]
+                    y_pred_segment = model(x_segment)
+                    if y_pred_segment.size()[1] == 2:
+                        y_pred_segment = y_pred_segment[:, 0, :]
+                    y_pred[:, :, offsets: (offsets + cfg.dataset.block_size)] = y_pred_segment
 
-            for i in tqdm(range(0, segments), desc=" sample progress", position=1, leave=False):
-                offsets = i * cfg.dataset.block_size
-                x_segment = x[:, :, offsets: (offsets + cfg.dataset.block_size)]
-                y_pred_segment = model(x_segment, dvec)
-                if y_pred_segment.size()[1] == 2:
-                    y_pred_segment = y_pred_segment[:, 0, :]
-                y_pred[:, :, offsets: (offsets + cfg.dataset.block_size)] = y_pred_segment
+                print('pred:', name)
+                play_tensor(y_pred[0])
 
-            print('pred')
-            play_tensor(y_pred[0])
+            else:
+                # predict with its own dvec
+                y_pred = torch.zeros_like(y)
+                for i in tqdm(range(0, segments), desc=" sample progress", position=1, leave=False):
+                    offsets = i * cfg.dataset.block_size
+                    x_segment = x[:, :, offsets: (offsets + cfg.dataset.block_size)]
+                    y_pred_segment = model(x_segment, dvec)
+                    if y_pred_segment.size()[1] == 2:
+                        y_pred_segment = y_pred_segment[:, 0, :]
+                    y_pred[:, :, offsets: (offsets + cfg.dataset.block_size)] = y_pred_segment
+
+                print('pred with own embedding:', name)
+                play_tensor(y_pred[0])
+
+                # predict with other's dvec
+                y_pred = torch.zeros_like(y)
+                for i in tqdm(range(0, segments), desc=" sample progress", position=1, leave=False):
+                    offsets = i * cfg.dataset.block_size
+                    x_segment = x[:, :, offsets: (offsets + cfg.dataset.block_size)]
+                    y_pred_segment = model(x_segment, dvec_unrelated)
+                    if y_pred_segment.size()[1] == 2:
+                        y_pred_segment = y_pred_segment[:, 0, :]
+                    y_pred[:, :, offsets: (offsets + cfg.dataset.block_size)] = y_pred_segment
+
+                print('pred with other embedding:', name_unrelated)
+                play_tensor(y_pred[0])
+
             print('original input')
             play_tensor(x[0])
             print('original target')

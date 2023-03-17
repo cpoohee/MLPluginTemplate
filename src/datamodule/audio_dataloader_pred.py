@@ -56,22 +56,35 @@ class AudioDatasetPred(Dataset):
         x_path = data['x']
         speaker_name = data['speaker_name']
         related_speakers = data['related_speakers']
-        id_other = random.choice(related_speakers)
-        speaker_path = self.df.iloc[id_other].x
+        id_other_related = random.choice(related_speakers)
+        speaker_path = self.df.iloc[id_other_related].x
+
+        unrelated_speakers = [i for i in range(0, len(self.df)) if i not in related_speakers]
+        unrelated_speakers.remove(idx)
+
+        id_other_unrelated = random.choice(unrelated_speakers)
+        unrelated_speaker_path = self.df.iloc[id_other_unrelated].x
+        unrelated_speakers_name = self.df.iloc[id_other_unrelated].speaker_name
 
         waveform_x, _ = torchaudio.load(x_path)
         waveform_speaker, _ = torchaudio.load(speaker_path)
+        waveform_unrelated_speaker, _ = torchaudio.load(unrelated_speaker_path)
         waveform_y = waveform_x
 
         waveform_speaker = self.__padding(waveform_speaker, self.block_size_speaker)
 
         # get speaker embeddings
         if self.model_name == 'AutoEncoder_Speaker_PL':
-            dvec = self.__get_embedding_vec(waveform_speaker)
+            dvec_related = self.__get_embedding_vec(waveform_speaker)
+            dvec_unrelated = self.__get_embedding_vec(waveform_unrelated_speaker)
+
+            dvec = (dvec_related, dvec_unrelated)
+            speaker_names = (speaker_name, unrelated_speakers_name)
         else:
-            dvec = waveform_speaker
+            dvec = (waveform_speaker, None)
+            speaker_names = (speaker_name, None)
 
         # waveform_x = torch.cat((waveform_x, waveform_x), dim=0)  # fake stereo
         # waveform_y = torch.cat((waveform_y, waveform_y), dim=0)
 
-        return waveform_x, waveform_y, dvec, speaker_name
+        return waveform_x, waveform_y, dvec, speaker_names
