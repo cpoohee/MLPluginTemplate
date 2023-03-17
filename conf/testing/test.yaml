@@ -1,5 +1,5 @@
 model_name: 'AutoEncoder_Speaker_PL' # WaveNet_PL, WaveUNet_PL, AutoEncoder_PL
-lossfn: 'MSELoss'
+lossfn: 'MultiResolutionSTFTLoss'
 checkpoint_file: './outputs/2023-03-17/08-31-50/models/auto_MSELoss epoch=9.ckpt'
 
 accelerator: mps # "mps", "cpu", "gpu", "tpu", "ipu", "auto"

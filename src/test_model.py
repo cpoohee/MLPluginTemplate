@@ -12,6 +12,7 @@ from src.model.waveUnet import WaveUNet_PL
 from src.model.autoencoder import AutoEncoder_PL
 from src.model.autoencoder_speaker import AutoEncoder_Speaker_PL
 from tqdm import tqdm
+from src.utils.losses import Losses
 
 
 @hydra.main(config_path="../conf", config_name="config")
@@ -47,6 +48,9 @@ def main(cfg: DictConfig):
         model = AutoEncoder_Speaker_PL.load_from_checkpoint(cur_path / Path(ckpt_path))
     else:
         assert False, " model name is invalid!"
+
+    # module reads training loss, override loss with test loss fn
+    model.loss = Losses(loss_type=cfg.testing.lossfn, sample_rate=cfg.dataset.sample_rate)
 
     trainer = pl.Trainer(accelerator=cfg.testing.accelerator)
 

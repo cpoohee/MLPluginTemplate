@@ -7,6 +7,7 @@ from torch.utils.data import Dataset
 from omegaconf import DictConfig
 from src.model.speaker_encoder.speaker_embedder import SpeechEmbedder, AudioHelper
 
+
 class AudioDatasetPred(Dataset):
     def __init__(self, df: pd.DataFrame, cfg: DictConfig):
         self.df = df
