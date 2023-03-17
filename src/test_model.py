@@ -50,7 +50,8 @@ def main(cfg: DictConfig):
         assert False, " model name is invalid!"
 
     # module reads training loss, override loss with test loss fn
-    model.loss = Losses(loss_type=cfg.testing.lossfn, sample_rate=cfg.dataset.sample_rate)
+    cfg.training.loss = cfg.testing.loss
+    model.loss = Losses(loss_type=cfg.testing.lossfn, sample_rate=cfg.dataset.sample_rate, cfg=cfg)
 
     trainer = pl.Trainer(accelerator=cfg.testing.accelerator)
 

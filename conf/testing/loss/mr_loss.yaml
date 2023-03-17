@@ -1,0 +1,9 @@
+## for MR
+fft_sizes: [512, 1024, 2048, 4096]
+hop_sizes: [50, 120, 240, 480]
+win_lengths: [240, 600, 1200, 2400]
+w_phs: 0.2 # mse weight
+
+#fft_sizes=[512, 1024, 2048, 4096],
+#hop_sizes=[50, 120, 240, 480],
+#win_lengths=[512, 1024, 2048, 4096],

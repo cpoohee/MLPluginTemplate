@@ -1,0 +1,4 @@
+fft_size: 1024
+win_length: 400
+hop_size: 160
+w_phs: 1.0
