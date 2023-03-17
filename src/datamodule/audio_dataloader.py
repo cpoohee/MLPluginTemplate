@@ -90,8 +90,6 @@ class AudioDataset(Dataset):
                                         beta=14.769656459379492,
                                         )
 
-
-
     def __get_embedding_vec(self, waveform_speaker):
         # embedding d vec
         waveform_speaker = self.resampler(waveform_speaker)  # resample to 16kHz

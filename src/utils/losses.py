@@ -59,13 +59,18 @@ class EMBLoss(torch.nn.Module):
     """
     def __init__(self, cfg):
         super(EMBLoss, self).__init__()
+        dev = torch.device(cfg.training.accelerator)
+
         self.embedder = SpeechEmbedder()
         chkpt_embed = torch.load(cfg.model.embedder_path, map_location=cfg.training.accelerator)
         self.embedder.load_state_dict(chkpt_embed)
         for p in self.embedder.parameters():
             p.requires_grad = False
 
+        self.embedder.to(dev)
+
         self.audio_helper = AudioHelper()
+
 
         # try to be as close as librosa's resampling
         self.resampler = T.Resample(orig_freq=cfg.dataset.block_size_speaker,
@@ -74,9 +79,9 @@ class EMBLoss(torch.nn.Module):
                                     rolloff=0.9475937167399596,
                                     resampling_method="sinc_interp_kaiser",
                                     beta=14.769656459379492,
-                                    )
+                                    ).to(dev)
 
-        self.loss = torch.nn.MSELoss()
+        self.loss = torch.nn.MSELoss().to(dev)
 
     def forward(self, pred, target_dvec):
         pred_dvec = self.__get_embedding_vec(pred)
@@ -105,7 +110,7 @@ class EMBLoss(torch.nn.Module):
         return dvecs
 
 
-class Losses(torch.nn.Module):
+class Losses:
     def __init__(self, loss_type='error_to_signal', sample_rate='44100', cfg: DictConfig=None):
         super(Losses, self).__init__()
         self.loss_type = loss_type

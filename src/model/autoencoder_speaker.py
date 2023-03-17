@@ -254,7 +254,6 @@ class AutoEncoder_Speaker_PL(pl.LightningModule):
         self.autoencoder = AutoEncoder_Speaker(cfg)
 
         self.lr = cfg.training.learning_rate
-        self.lossfn = cfg.training.lossfn
         self.cfg = cfg
 
         self.loss_preemphasis_hp_filter = cfg.training.loss_preemphasis_hp_filter
@@ -292,9 +291,9 @@ class AutoEncoder_Speaker_PL(pl.LightningModule):
             y_pred, y = self.aw_filter(y_pred, y)
 
         if self.loss_type == 'EMBLoss':
-            return  self.loss(y_pred, dvec)
+            return self.loss.forward(y_pred, dvec)
 
-        return self.loss(y_pred, y)
+        return self.loss.forward(y_pred, y)
 
     def training_step(self, batch, batch_idx):
         y, y_pred, dvec, name = self._shared_eval_step(batch)
