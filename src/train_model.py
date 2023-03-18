@@ -2,9 +2,8 @@ import hydra
 import os
 import mlflow
 import pytorch_lightning as pl
+import sys
 from pathlib import Path
-
-import torch
 from omegaconf import DictConfig
 from src.datamodule.audio_datamodule import AudioDataModule
 from src.model.wavenet import WaveNet_PL
@@ -17,6 +16,7 @@ from pytorch_lightning.loggers import MLFlowLogger
 
 @hydra.main(config_path="../conf", config_name="config")
 def main(cfg: DictConfig):
+    sys.stdout = Logger()
     cur_path = Path(os.path.abspath(hydra.utils.get_original_cwd()))
     data_path = cfg.dataset.data_path
 
@@ -63,6 +63,7 @@ def main(cfg: DictConfig):
         callbacks=[checkpoint_callback],
         logger=mlf_logger,
         log_every_n_steps=1,
+        # profiler="advanced"
     )
 
     if cfg.training.resume_checkpoint:
@@ -83,6 +84,22 @@ def main(cfg: DictConfig):
                                    cfg=cfg,
                                    batch_size=batch_size)
         trainer.test(model, dataloaders=dm_test)
+
+
+class Logger(object):
+    def __init__(self):
+        self.terminal = sys.stdout
+        self.log = open("console.log", "a")
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+
+    def flush(self):
+        # this flush method is needed for python 3 compatibility.
+        # this handles the flush command by doing nothing.
+        # you might want to specify some extra behavior here.
+        pass
 
 
 if __name__ == "__main__":
