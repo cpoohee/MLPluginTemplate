@@ -20,11 +20,6 @@ def main(cfg: DictConfig):
     cur_path = Path(os.path.abspath(hydra.utils.get_original_cwd()))
     data_path = cfg.dataset.data_path
 
-    batch_size = cfg.training.batch_size
-    dm_train = AudioDataModule(data_dir=(cur_path / data_path),
-                               cfg=cfg,
-                               batch_size=batch_size)
-
     if cfg.model.model_name == 'WaveNet_PL':
         model = WaveNet_PL(cfg)
     elif cfg.model.model_name == 'WaveUNet_PL':
@@ -37,6 +32,11 @@ def main(cfg: DictConfig):
         model = AutoEncoder_Speaker_PL(cfg)
     else:
         assert False, " model name is invalid!"
+
+    batch_size = cfg.training.batch_size
+    dm_train = AudioDataModule(data_dir=(cur_path / data_path),
+                               cfg=cfg,
+                               batch_size=batch_size)
 
     # model = torch.compile(model)
 
