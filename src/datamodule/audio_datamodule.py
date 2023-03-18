@@ -7,11 +7,12 @@ from src.datamodule.audio_dataloader import AudioDataset
 from src.datamodule.audio_dataloader_pred import AudioDatasetPred
 from torch.utils.data import DataLoader
 
+
 class AudioDataModule(pl.LightningDataModule):
     def __init__(self, data_dir: Path,
                  cfg: DictConfig,
                  batch_size: int = 32,
-                 shuffle_train:bool = True,
+                 shuffle_train: bool = True,
                  do_aug_in_predict: bool = False,
                  do_aug_in_val: bool = False,
                  do_aug_in_test: bool = False,
@@ -33,13 +34,22 @@ class AudioDataModule(pl.LightningDataModule):
         self.cfg = cfg
 
     def setup(self, stage: str):
-        if stage == "fit":
-            self.df_train = self.form_dataframe(self.data_dir / 'train')
-            self.df_val = self.form_dataframe(self.data_dir / 'val')
-        if stage == "test":
-            self.df_test = self.form_dataframe(self.data_dir / 'test')
-        if stage == "predict":
-            self.df_predict = self.form_dataframe(self.data_dir / 'predict')
+        if self.cfg.model.model_name == 'AutoEncoder_Speaker_PL':
+            if stage == "fit":
+                self.df_train = pd.read_pickle(self.data_dir / 'train' / 'dataframe.pkl')
+                self.df_val = pd.read_pickle(self.data_dir / 'val' / 'dataframe.pkl')
+            if stage == "test":
+                self.df_test = pd.read_pickle(self.data_dir / 'test' / 'dataframe.pkl')
+            if stage == "predict":
+                self.df_predict = pd.read_pickle(self.data_dir / 'predict' / 'dataframe.pkl')
+        else:
+            if stage == "fit":
+                self.df_train = self.form_dataframe(self.data_dir / 'train')
+                self.df_val = self.form_dataframe(self.data_dir / 'val')
+            if stage == "test":
+                self.df_test = self.form_dataframe(self.data_dir / 'test')
+            if stage == "predict":
+                self.df_predict = self.form_dataframe(self.data_dir / 'predict')
 
     def form_dataframe(self, data_path):
         dataset_speakers = [x for x in data_path.iterdir() if x.is_dir()]
@@ -69,8 +79,6 @@ class AudioDataModule(pl.LightningDataModule):
             indexes_to_speaker = row['related_speakers'].copy()  # somehow, we need a copy
             indexes_to_speaker.remove(index)
             df.loc[index, 'related_speakers'] = indexes_to_speaker  # no need for nested list
-
-        # TODO: cache dvec
 
         return df
 

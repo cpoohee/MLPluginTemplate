@@ -234,26 +234,25 @@ class AudioDataset(Dataset):
         x_path = data['x']
         speaker_name = data['speaker_name']
         related_speakers = data['related_speakers']
-        id_other = random.choice(related_speakers)
-
-        unrelated_speakers = [i for i in range(0, len(self.df)) if i not in related_speakers]
-        unrelated_speakers.remove(idx)
-
-        id_other_unrelated = random.choice(unrelated_speakers)
-        unrelated_speaker_path = self.df.iloc[id_other_unrelated].x
-
+        # id_other = random.choice(related_speakers)
         # speaker_path = self.df.iloc[id_other].x
 
         waveform_x, _ = torchaudio.load(x_path)
-        waveform_speaker, _ = torchaudio.load(unrelated_speaker_path)
+        if self.model_name == 'AutoEncoder_Speaker_PL':
+            unrelated_speakers = [i for i in range(0, len(self.df)) if i not in related_speakers]
+            unrelated_speakers.remove(idx)
+            id_other_unrelated = random.choice(unrelated_speakers)
+            target_speaker_vec = self.df.iloc[id_other_unrelated].dvec
+            target_speaker_name = self.df.iloc[id_other_unrelated].speaker_name
+        else:
+            target_speaker_vec = None
+            target_speaker_name = None
 
         waveform_x = self.__padding(waveform_x, self.block_size)
-        waveform_speaker = self.__padding(waveform_speaker, self.block_size_speaker)
 
         # 'batch' up waveforms x and y together
         waveform_x = torch.unsqueeze(waveform_x, dim=0)
         waveform_y = waveform_x  # copy input as target
-        waveform_speaker = torch.unsqueeze(waveform_speaker, dim=0)
         waveform = torch.cat((waveform_x, waveform_y), 0)
 
         # decided to do time shift earlier then do block cropping, to prevent too many zero pads
@@ -262,7 +261,6 @@ class AudioDataset(Dataset):
 
         if self.do_random_block:
             waveform = self.__random_block(waveform)
-            waveform_speaker = self.__random_block_speaker(waveform_speaker)
 
         # do the rest of the augmentations with smaller block for faster processing
 
@@ -283,15 +281,8 @@ class AudioDataset(Dataset):
 
         waveform_x = self.__padding(waveform_x, self.block_size)
         waveform_y = self.__padding(waveform_y, self.block_size)
-        waveform_speaker = self.__padding(waveform_speaker[0], self.block_size_speaker)
-
-        # get speaker embeddings
-        if self.model_name == 'AutoEncoder_Speaker_PL':
-            dvec = self.__get_embedding_vec(waveform_speaker)
-        else:
-            dvec = waveform_speaker
 
         # waveform_x = torch.cat((waveform_x, waveform_x), dim=0) # fake stereo
         # waveform_y = torch.cat((waveform_y, waveform_y), dim=0)
 
-        return waveform_x, waveform_y, dvec, speaker_name
+        return waveform_x, waveform_y, target_speaker_vec, (speaker_name, target_speaker_name)
