@@ -59,7 +59,7 @@ class AutoEncoder_PL(pl.LightningModule):
         if self.loss_preemphasis_aw_filter:
             y, y_pred = self.aw_filter(y, y_pred)
 
-        return self.loss(y, y_pred)
+        return self.loss.forward(y, y_pred)
 
     def training_step(self, batch, batch_idx):
         y, y_pred = self._shared_eval_step(batch)
