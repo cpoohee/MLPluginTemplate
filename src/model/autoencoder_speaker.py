@@ -177,6 +177,7 @@ class AutoEncoder_Speaker(nn.Module):
         self.projections = nn.ModuleList([nn.Linear(in_features=self.latent_slice_size * 2,
                                                     out_features=self.latent_slice_size)
                                           for _ in range(0, self.ae_channel_size)])
+        self.activations = nn.Tanh()
 
     def fuse_embedding(self, z, dvec):
         # z is [b, 32 channels, xsize/32 ]
@@ -209,6 +210,7 @@ class AutoEncoder_Speaker(nn.Module):
 
                 # [b , latent_slice_size]
                 project = self.projections[i](seq_z)
+                project = self.activations(project)
                 projects.append(project)
 
             # list of slices [ [b, num_z_partials , latent_slice_size]]
