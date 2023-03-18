@@ -10,13 +10,13 @@ accelerator: mps # "cpu", "gpu", "tpu", "ipu", "auto"
 num_workers: 6 # number of workers for training dataloader
 continue_test: true
 
-lossfn: 'EMBLoss' # error_to_signal, ESRLoss, DCLoss, LogCoshLoss, SNRLoss, SDSDRLoss, MSELoss, DC_SDSDR_SNR_Loss, STFTLoss, MelSTFTLoss, MultiResolutionSTFTLoss, RandomResolutionSTFTLoss
+lossfn: 'EMB_MR_Loss' # error_to_signal, ESRLoss, DCLoss, LogCoshLoss, SNRLoss, SDSDRLoss, MSELoss, DC_SDSDR_SNR_Loss, STFTLoss, MelSTFTLoss, MultiResolutionSTFTLoss, RandomResolutionSTFTLoss, EMBLoss, EMB_MR_Loss,
 loss_preemphasis_hp_filter: false
 loss_preemphasis_hp_coeff: 0.95
 loss_preemphasis_aw_filter: false
 
 
-experiment_name: 'auto_EMBLoss'
+experiment_name: 'auto_EMB_MR_Loss'
 
 
 resume_checkpoint: false
