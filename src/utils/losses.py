@@ -199,10 +199,18 @@ class Losses:
         elif loss_type == 'EMBLoss':
             self.loss = EMBLoss(self.cfg)
 
+        elif loss_type == 'EMB_MR_Loss':
+            self.loss_emb = EMBLoss(self.cfg)
+            self.loss_mr = auraloss.freq.MultiResolutionSTFTLoss(
+                    fft_sizes=OmegaConf.to_object(self.cfg.training.loss.fft_sizes),
+                    win_lengths=OmegaConf.to_object(self.cfg.training.loss.win_lengths),
+                    hop_sizes=OmegaConf.to_object(self.cfg.training.loss.hop_sizes),
+                    w_phs=self.cfg.training.loss.w_phs,
+                    device=torch.device("cpu"));
         else:
             assert False
 
-    def forward(self, input, target):
+    def forward(self, input, target, dvec=None):
         if self.loss_type == 'DC_SDSDR_SNR_Loss':
             lossDC = self.lossDC(input, target)
             lossSDSDR = self.lossSDSDR(input, target)
@@ -221,9 +229,23 @@ class Losses:
                 self.loss_type == 'MultiResolutionSTFTLoss' or \
                 self.loss_type == 'RandomResolutionSTFTLoss':
             # mps is not able to process complex types in stft, fall back to cpu
-            cpudevice = torch.device('cpu')
-            input_cpu = input.to(cpudevice)
-            target_cpu = target.to(cpudevice)
-            return self.loss(input_cpu, target_cpu)
+            if input.device.type == 'mps':
+                cpudevice = torch.device('cpu')
+                input = input.to(cpudevice)
+                target = target.to(cpudevice)
+            return self.loss(input, target)
+
+        elif self.loss_type == 'EMBLoss':
+            emb_loss = self.loss(input, target)  # dvec is from target
+            return emb_loss*3000  # to compensate small number of mse emb loss
+
+        elif self.loss_type == 'EMB_MR_Loss':
+            emb_loss = self.loss_emb(input, dvec)
+            if input.device.type == 'mps':
+                cpudevice = torch.device('cpu')
+                input = input.to(cpudevice)
+                target = target.to(cpudevice)
+            mr_loss = self.loss_mr(input, target)
+            return mr_loss + emb_loss*3000  # to compensate small number of mse emb loss
 
         return self.loss(input, target)

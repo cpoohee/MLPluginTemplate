@@ -12,7 +12,6 @@ from typing import Any, List, Optional, Sequence, Tuple, Union
 from transformers import PreTrainedModel
 from transformers import PretrainedConfig
 
-# from archisound import ArchiSound
 
 bottleneck = {'tanh': TanhBottleneck}
 
@@ -154,9 +153,6 @@ class AutoEncoder_Speaker(nn.Module):
 
         self.autoencoder = torch.compile(self.autoencoder)
 
-        # auto encoder
-        # self.autoencoder = ArchiSound.from_pretrained("autoencoder1d-AT-v1")
-
         self.bottleneck_dropout = nn.Dropout(p=cfg.model.bottleneck_dropout)
 
         # the autoencoder's encoder output size is [1, 32 channels, input//32]
@@ -177,7 +173,7 @@ class AutoEncoder_Speaker(nn.Module):
         self.projections = nn.ModuleList([nn.Linear(in_features=self.latent_slice_size * 2,
                                                     out_features=self.latent_slice_size)
                                           for _ in range(0, self.ae_channel_size)])
-        self.activations = nn.Tanh()
+        self.activations = nn.Tanh()  # follows the same activation output from the encoder z
 
     def fuse_embedding(self, z, dvec):
         # z is [b, 32 channels, xsize/32 ]
@@ -267,7 +263,9 @@ class AutoEncoder_Speaker_PL(pl.LightningModule):
         https://github.com/csteinmetz1/auraloss
         """
         self.loss_type = cfg.training.lossfn
-        self.loss = Losses(loss_type=self.loss_type, sample_rate=cfg.dataset.sample_rate, cfg=self.cfg)
+        self.loss = Losses(loss_type=self.loss_type,
+                           sample_rate=cfg.dataset.sample_rate,
+                           cfg=self.cfg)
 
         if self.loss_preemphasis_hp_filter:
             self.fir_filter = PreEmphasisFilter(coeff=self.loss_preemphasis_hp_coeff)
@@ -294,6 +292,9 @@ class AutoEncoder_Speaker_PL(pl.LightningModule):
 
         if self.loss_type == 'EMBLoss':
             return self.loss.forward(y_pred, dvec)
+
+        if self.loss_type == 'EMB_MR_Loss':
+            return self.loss.forward(y_pred, y, dvec)
 
         return self.loss.forward(y_pred, y)
 
@@ -336,6 +337,6 @@ class AutoEncoder_Speaker_PL(pl.LightningModule):
         self.test_step_outputs.clear()
         return {"avg_test_loss": avg_loss, "log": logs}
 
-    def predict_step(self, batch, batch_idx):
-        y, y_pred, dvec, name = self._shared_eval_step(batch)
-        return y_pred
+    # def predict_step(self, batch, batch_idx):
+    #     y, y_pred, dvec, name = self._shared_eval_step(batch)
+    #     return y_pred
