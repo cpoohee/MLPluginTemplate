@@ -50,7 +50,7 @@ def main(cfg: DictConfig):
 
     # module reads training loss, override loss with test loss fn
     cfg.training.loss = cfg.testing.loss
-    model.loss_type = cfg.testing.loss
+    model.loss_type = cfg.testing.lossfn
     model.loss = Losses(loss_type=cfg.testing.lossfn, sample_rate=cfg.dataset.sample_rate, cfg=cfg)
 
     trainer = pl.Trainer(accelerator=cfg.testing.accelerator)
