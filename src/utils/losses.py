@@ -112,6 +112,10 @@ class Losses:
         self.sample_rate = sample_rate
         self.cfg = cfg
 
+        self.device = torch.device('cuda')
+        if torch.backends.mps.is_available():
+            self.device = torch.device('cpu')
+
         # time domain
         if loss_type == 'error_to_signal':
             self.loss = ESRLossORG()
@@ -142,14 +146,14 @@ class Losses:
                                                    hop_size=1024,
                                                    w_phs=0.2,
                                                    sample_rate=self.sample_rate,
-                                                   device=torch.device("cpu"))
+                                                   device=self.device)
             else:
                 self.loss = auraloss.freq.STFTLoss(fft_size=self.cfg.training.loss.fft_size,
                                                    win_length=self.cfg.training.loss.win_length,
                                                    hop_size=self.cfg.training.loss.hop_size,
                                                    w_phs=self.cfg.training.loss.w_phs,
                                                    sample_rate=self.sample_rate,
-                                                   device=torch.device("cpu"))
+                                                   device=self.device)
 
         elif loss_type == 'MelSTFTLoss':
             if self.cfg == None:
@@ -158,14 +162,14 @@ class Losses:
                                                       n_mels=128,
                                                       w_phs=0.2,
                                                       sample_rate=self.sample_rate,
-                                                      device=torch.device("cpu"))
+                                                      device=self.device)
             else:
                 self.loss = auraloss.freq.MelSTFTLoss(fft_size=self.cfg.training.loss.fft_size,
                                                       hop_size=self.cfg.training.loss.hop_size,
                                                       n_mels=self.cfg.training.loss.n_mels,
                                                       w_phs=self.cfg.training.loss.w_phs,
                                                       sample_rate=self.sample_rate,
-                                                      device=torch.device("cpu"))
+                                                      device=self.device)
 
         elif loss_type == 'MultiResolutionSTFTLoss':
             if self.cfg == None:
@@ -174,17 +178,17 @@ class Losses:
                     hop_sizes=[50, 120, 240, 480],
                     win_lengths=[512, 1024, 2048, 4096],
                     w_phs=0.2,
-                    device=torch.device("cpu"));
+                    device=self.device);
             else:
                 self.loss = auraloss.freq.MultiResolutionSTFTLoss(
                     fft_sizes=OmegaConf.to_object(self.cfg.training.loss.fft_sizes),
                     win_lengths=OmegaConf.to_object(self.cfg.training.loss.win_lengths),
                     hop_sizes=OmegaConf.to_object(self.cfg.training.loss.hop_sizes),
                     w_phs=self.cfg.training.loss.w_phs,
-                    device=torch.device("cpu"));
+                    device=self.device);
 
         elif loss_type == 'RandomResolutionSTFTLoss':
-            self.loss = auraloss.freq.RandomResolutionSTFTLoss(device=torch.device("cpu"));
+            self.loss = auraloss.freq.RandomResolutionSTFTLoss(device=self.device);
 
         # combination losses
         elif loss_type == 'DC_SDSDR_SNR_Loss':
@@ -206,7 +210,7 @@ class Losses:
                     win_lengths=OmegaConf.to_object(self.cfg.training.loss.win_lengths),
                     hop_sizes=OmegaConf.to_object(self.cfg.training.loss.hop_sizes),
                     w_phs=self.cfg.training.loss.w_phs,
-                    device=torch.device("cpu"));
+                    device=self.device);
         else:
             assert False
 
@@ -230,9 +234,8 @@ class Losses:
                 self.loss_type == 'RandomResolutionSTFTLoss':
             # mps is not able to process complex types in stft, fall back to cpu
             if input.device.type == 'mps':
-                cpudevice = torch.device('cpu')
-                input = input.to(cpudevice)
-                target = target.to(cpudevice)
+                input = input.to(self.device)
+                target = target.to(self.device)
             return self.loss(input, target)
 
         elif self.loss_type == 'EMBLoss':
@@ -242,9 +245,8 @@ class Losses:
         elif self.loss_type == 'EMB_MR_Loss':
             emb_loss = self.loss_emb(input, dvec)
             if input.device.type == 'mps':
-                cpudevice = torch.device('cpu')
-                input = input.to(cpudevice)
-                target = target.to(cpudevice)
+                input = input.to(self.device)
+                target = target.to(self.device)
             mr_loss = self.loss_mr(input, target)
             return mr_loss + emb_loss*3000  # to compensate small number of mse emb loss
 
