@@ -3,6 +3,7 @@ import os
 import mlflow
 import pytorch_lightning as pl
 import sys
+from src.utils.logging import Logger
 from pathlib import Path
 from omegaconf import DictConfig
 from src.datamodule.audio_datamodule import AudioDataModule
@@ -84,22 +85,6 @@ def main(cfg: DictConfig):
                                    cfg=cfg,
                                    batch_size=batch_size)
         trainer.test(model, dataloaders=dm_test)
-
-
-class Logger(object):
-    def __init__(self):
-        self.terminal = sys.stdout
-        self.log = open("console.log", "a")
-
-    def write(self, message):
-        self.terminal.write(message)
-        self.log.write(message)
-
-    def flush(self):
-        # this flush method is needed for python 3 compatibility.
-        # this handles the flush command by doing nothing.
-        # you might want to specify some extra behavior here.
-        pass
 
 
 if __name__ == "__main__":
