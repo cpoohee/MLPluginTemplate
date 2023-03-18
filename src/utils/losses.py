@@ -69,8 +69,9 @@ class EMBLoss(torch.nn.Module):
 
         self.embedder.to(dev)
 
-        self.audio_helper = AudioHelper()
+        self.embedder = torch.compile(self.embedder, mode='reduce-overhead')
 
+        self.audio_helper = AudioHelper()
 
         # try to be as close as librosa's resampling
         self.resampler = T.Resample(orig_freq=cfg.dataset.block_size_speaker,
@@ -83,8 +84,10 @@ class EMBLoss(torch.nn.Module):
 
         self.loss = torch.nn.MSELoss().to(dev)
 
+        self.fallback_device = torch.device('cpu')
+
     def forward(self, pred, target_dvec):
-        # TODO: Test if onnx embedding inference is faster than pytorch model in nb. then implement it
+        #  onnx embedding inference a little inaccurate. to use native pytorch inference
 
         pred_dvec = self.__get_embedding_vec(pred)
         return self.loss(pred_dvec, target_dvec)
@@ -92,11 +95,11 @@ class EMBLoss(torch.nn.Module):
     def __get_embedding_vec(self, waveform_speaker):
         # embedding d vec
         waveform_speaker = self.resampler(waveform_speaker)  # resample to 16kHz
-        waveform_speaker = waveform_speaker.squeeze()  # [16000]
+        waveform_speaker = waveform_speaker.squeeze(dim=1)  # [b, 16000]
 
         org_dev = waveform_speaker.device
-        cpudevice = torch.device('cpu')
-        waveform_speaker = waveform_speaker.to(cpudevice)
+        if waveform_speaker.device.type == 'mps':
+            waveform_speaker = waveform_speaker.to(self.fallback_device)
         dvec_mel, _, _ = self.audio_helper.get_mel_torch(waveform_speaker)
         dvec_mel = dvec_mel.to(org_dev)
 

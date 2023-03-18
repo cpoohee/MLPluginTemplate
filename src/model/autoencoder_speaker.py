@@ -151,7 +151,7 @@ class AutoEncoder_Speaker(nn.Module):
             for p in self.autoencoder.autoencoder.decoder.parameters():
                 p.requires_grad = False
 
-        self.autoencoder = torch.compile(self.autoencoder)
+        self.autoencoder = torch.compile(self.autoencoder, mode="reduce-overhead")
 
         self.bottleneck_dropout = nn.Dropout(p=cfg.model.bottleneck_dropout)
 

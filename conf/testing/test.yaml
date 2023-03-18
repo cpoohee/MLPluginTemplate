@@ -4,7 +4,7 @@ defaults:
   - loss: mr_loss  # loss params, if needed
 lossfn: 'EMB_MR_Loss'
 
-checkpoint_file: './outputs/2023-03-19/03-40-45/models/auto_EMB_MR_Loss.ckpt'
+checkpoint_file: './outputs/2023-03-19/04-07-09/models/auto_EMB_MR_Loss.ckpt'
 
 accelerator: mps # "mps", "cpu", "gpu", "tpu", "ipu", "auto"
 do_aug_in_predict: false
