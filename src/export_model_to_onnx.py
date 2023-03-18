@@ -47,7 +47,7 @@ def main(cfg: DictConfig):
 
         dummy_input = (dummy_wav, dummy_dvec)
         assert (test_out.size() == dummy_wav.size())
-        input_names = ["input1", "dvec"]
+
 
     else:
         dummy_input = torch.randn(1, 1, sample_block_size)

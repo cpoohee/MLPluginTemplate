@@ -1,0 +1,5 @@
+embedder_path: './models/pre-trained/voice_filter_embedder.pt'
+
+export_filename: './models/onnx/emb.onnx'
+sample_block_size: 131072 # some numbers
+emb_size: 256

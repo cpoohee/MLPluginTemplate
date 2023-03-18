@@ -4,7 +4,7 @@ defaults:
   - loss: mr_loss  # loss params, if needed
 lossfn: 'DC_SDSDR_SNR_Loss'
 
-checkpoint_file: './outputs/2023-03-18/03-33-15/models/auto_DC_SDSDR_SNR_Loss epoch=139.ckpt'
+checkpoint_file: './outputs/2023-03-18/06-30-07/models/auto_EMBLoss epoch=9.ckpt'
 
 accelerator: mps # "mps", "cpu", "gpu", "tpu", "ipu", "auto"
 do_aug_in_predict: false

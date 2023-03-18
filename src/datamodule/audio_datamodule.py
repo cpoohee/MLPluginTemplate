@@ -70,6 +70,8 @@ class AudioDataModule(pl.LightningDataModule):
             indexes_to_speaker.remove(index)
             df.loc[index, 'related_speakers'] = indexes_to_speaker  # no need for nested list
 
+        # TODO: cache dvec
+
         return df
 
     def train_dataloader(self):

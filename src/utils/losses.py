@@ -84,6 +84,8 @@ class EMBLoss(torch.nn.Module):
         self.loss = torch.nn.MSELoss().to(dev)
 
     def forward(self, pred, target_dvec):
+        # TODO: Test if onnx embedding inference is faster than pytorch model in nb. then implement it
+
         pred_dvec = self.__get_embedding_vec(pred)
         return self.loss(pred_dvec, target_dvec)
 
