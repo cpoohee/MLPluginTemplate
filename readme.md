@@ -148,7 +148,9 @@ Lastly, the model should be small and performant enough to run in a plugin.
   
 # Brief description of Source code folder and scripts
 - download_data.py -> downloads dataset into data/raw, then pick the audio and place into data/interim
-- process_data.py -> use the audio from data/interim, process the audio into 1 sec blocks, cuts silences and place into data/processed
-- train_wavenet.py -> trains data from data/processed,
-- train_wavenet.py -> test (output as metrics) and do prediction (outputs for listening ) from data/processed
+- download_pre-trained_models.py -> download pre-trained models into models/pre-trained for later uses. 
+- process_data.py -> use the audio from data/interim, process the audio into xx sec blocks, cuts silences and place into data/processed
+- cache_dataset.py -> cache dataset's speech embeddings from wav files.
+- train_model.py -> trains data from data/processed,
+- test_model.py -> test (output as metrics) and do prediction (outputs for listening ) from data/processed
 - export_model_to_onnx.py -> export model to onnx 
