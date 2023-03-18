@@ -60,6 +60,26 @@ class SpeechEmbedder(nn.Module):
         x = x.sum(0) / x.size(0)  # (emb_dim), average pooling over time frames
         return x
 
+    def batched_forward(self, mel):
+        # (b, n_mels, T)
+        mels = mel.unfold(2, self.window, self.stride)  # [b, n_mels, T', window]
+        mels = mels.permute(0, 2, 3, 1)   # [b, T', window, n_mels]
+
+        batch_size = mels.size(0)
+        t_length = mels.size(1)
+        mels = torch.reshape(mels, [batch_size*t_length, self.window, self.num_mels])
+
+        x, _ = self.lstm(mels)  # [b*T', window, hidden] push the time lengths into other batches
+        x = x[:, -1, :]  # (b, window, lstm_hidden), use last frame only
+        x = self.proj(x)  # (b, lstm_hidden) -> (b, emb_dim)
+        x = x / torch.norm(x, p=2, dim=1, keepdim=True)  # (b, emb_dim)
+
+        x = torch.reshape(x, [batch_size, t_length, self.emb_dim])  # [b, T', emb_dim]
+        x = torch.sum(x, dim=1)  # [b, emb_dim]
+        x = x / t_length  # [b, emb_dim]
+
+        return x
+
 
 # adapted from Keith Ito's tacotron implementation
 # https://github.com/keithito/tacotron/blob/master/util/audio.py

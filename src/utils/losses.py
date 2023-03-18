@@ -98,16 +98,9 @@ class EMBLoss(torch.nn.Module):
         cpudevice = torch.device('cpu')
         waveform_speaker = waveform_speaker.to(cpudevice)
         dvec_mel, _, _ = self.audio_helper.get_mel_torch(waveform_speaker)
-
         dvec_mel = dvec_mel.to(org_dev)
 
-        dvecs = []
-
-        for i in range(0, dvec_mel.size()[0]):
-            dvec = self.embedder(dvec_mel[i]) # embedder functions in one batch
-            dvecs.append(dvec)
-
-        dvecs = torch.stack(dvecs, dim=0)
+        dvecs = self.embedder.batched_forward(dvec_mel)
 
         return dvecs
 

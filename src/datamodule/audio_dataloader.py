@@ -73,31 +73,31 @@ class AudioDataset(Dataset):
 
         self.model_name = cfg.model.model_name
 
-        if self.model_name == 'AutoEncoder_Speaker_PL':
-            # speech embedder
-            self.embedder = SpeechEmbedder()
-            chkpt_embed = torch.load(cfg.model.embedder_path, map_location=cfg.training.accelerator)
-            self.embedder.load_state_dict(chkpt_embed)
-            self.embedder.eval()
-            self.audio_helper = AudioHelper()
+        # if self.model_name == 'AutoEncoder_Speaker_PL':
+        #     # speech embedder
+        #     self.embedder = SpeechEmbedder()
+        #     chkpt_embed = torch.load(cfg.model.embedder_path, map_location=cfg.training.accelerator)
+        #     self.embedder.load_state_dict(chkpt_embed)
+        #     self.embedder.eval()
+        #     self.audio_helper = AudioHelper()
+        #
+        #     # try to be as close as librosa's resampling
+        #     self.resampler = T.Resample(orig_freq=cfg.dataset.block_size_speaker,
+        #                                 new_freq=self.embedder.get_target_sample_rate(),
+        #                                 lowpass_filter_width=64,
+        #                                 rolloff=0.9475937167399596,
+        #                                 resampling_method="sinc_interp_kaiser",
+        #                                 beta=14.769656459379492,
+        #                                 )
 
-            # try to be as close as librosa's resampling
-            self.resampler = T.Resample(orig_freq=cfg.dataset.block_size_speaker,
-                                        new_freq=self.embedder.get_target_sample_rate(),
-                                        lowpass_filter_width=64,
-                                        rolloff=0.9475937167399596,
-                                        resampling_method="sinc_interp_kaiser",
-                                        beta=14.769656459379492,
-                                        )
-
-    def __get_embedding_vec(self, waveform_speaker):
-        # embedding d vec
-        waveform_speaker = self.resampler(waveform_speaker)  # resample to 16kHz
-        waveform_speaker = waveform_speaker.squeeze()  # [16000]
-        dvec_mel, _, _ = self.audio_helper.get_mel_torch(waveform_speaker)
-        with torch.no_grad():
-            dvec = self.embedder(dvec_mel)
-            return dvec
+    # def __get_embedding_vec(self, waveform_speaker):
+    #     # embedding d vec
+    #     waveform_speaker = self.resampler(waveform_speaker)  # resample to 16kHz
+    #     waveform_speaker = waveform_speaker.squeeze()  # [16000]
+    #     dvec_mel, _, _ = self.audio_helper.get_mel_torch(waveform_speaker)
+    #     with torch.no_grad():
+    #         dvec = self.embedder(dvec_mel)
+    #         return dvec
 
     def set_random_crop(self, set):
         self.do_random_block = set
