@@ -21,6 +21,9 @@ def main(cfg: DictConfig):
     data_path = cfg.dataset.data_path
 
     batch_size = cfg.training.batch_size
+
+    cfg.training.accelerator = cfg.testing.accelerator
+
     dm_test = AudioDataModule(data_dir=(cur_path / data_path),
                               cfg=cfg,
                               batch_size=batch_size,
@@ -44,7 +47,7 @@ def main(cfg: DictConfig):
     elif cfg.testing.model_name == 'AutoEncoder_Speaker_PL':
         cfg.model.embedder_path = cur_path / Path(cfg.model.embedder_path)
         cfg.model.ae_path = cur_path / Path(cfg.model.ae_path)
-        model = AutoEncoder_Speaker_PL.load_from_checkpoint(cur_path / Path(ckpt_path))
+        model = AutoEncoder_Speaker_PL.load_from_checkpoint(cur_path / Path(ckpt_path), cfg=cfg )
     else:
         assert False, " model name is invalid!"
 
@@ -53,8 +56,7 @@ def main(cfg: DictConfig):
     model.loss_type = cfg.testing.lossfn
     model.loss = Losses(loss_type=cfg.testing.lossfn, sample_rate=cfg.dataset.sample_rate, cfg=cfg)
 
-    trainer = pl.Trainer(accelerator=cfg.testing.accelerator)
-
+    trainer = pl.Trainer(accelerator=cfg.testing.accelerator)  # pl takes care of device
     trainer.test(model, dataloaders=dm_test)
 
     dm_pred.setup('predict')
@@ -62,6 +64,7 @@ def main(cfg: DictConfig):
 
     dev = torch.device(cfg.testing.accelerator)
 
+    # manually place device, because we are doing prediction manually
     if model.device != dev:
         model = model.to(dev)
 

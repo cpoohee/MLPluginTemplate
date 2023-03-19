@@ -236,7 +236,8 @@ class AudioDataset(Dataset):
         related_speakers = data['related_speakers']
 
         own_dvec = self.df.iloc[idx].dvec
-        own_dvec = torch.from_numpy(own_dvec)
+        if isinstance(own_dvec, np.ndarray):
+            own_dvec = torch.from_numpy(own_dvec)
 
         # id_other = random.choice(related_speakers)
         # speaker_path = self.df.iloc[id_other].x
@@ -247,7 +248,8 @@ class AudioDataset(Dataset):
             unrelated_speakers.remove(idx)
             id_other_unrelated = random.choice(unrelated_speakers)
             target_speaker_vec = self.df.iloc[id_other_unrelated].dvec
-            target_speaker_vec = torch.from_numpy(target_speaker_vec)
+            if isinstance(target_speaker_vec, np.ndarray):
+                target_speaker_vec = torch.from_numpy(target_speaker_vec)
             target_speaker_name = self.df.iloc[id_other_unrelated].speaker_name
         else:
             target_speaker_vec = None
