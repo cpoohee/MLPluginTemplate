@@ -234,6 +234,10 @@ class AudioDataset(Dataset):
         x_path = data['x']
         speaker_name = data['speaker_name']
         related_speakers = data['related_speakers']
+
+        own_dvec = self.df.iloc[idx].dvec
+        own_dvec = torch.from_numpy(own_dvec)
+
         # id_other = random.choice(related_speakers)
         # speaker_path = self.df.iloc[id_other].x
 
@@ -286,4 +290,4 @@ class AudioDataset(Dataset):
         # waveform_x = torch.cat((waveform_x, waveform_x), dim=0) # fake stereo
         # waveform_y = torch.cat((waveform_y, waveform_y), dim=0)
 
-        return waveform_x, waveform_y, target_speaker_vec, (speaker_name, target_speaker_name)
+        return waveform_x, waveform_y, (own_dvec, target_speaker_vec), (speaker_name, target_speaker_name)

@@ -299,17 +299,26 @@ class AutoEncoder_Speaker_PL(pl.LightningModule):
         return self.loss.forward(y_pred, y)
 
     def training_step(self, batch, batch_idx):
-        y, y_pred, dvec, name = self._shared_eval_step(batch)
-        loss = self._lossfn(y_pred, y, dvec)
+        # y, y_pred, dvecs, name = self._shared_eval_step(batch)
+        x, y, dvecs, name = batch
+        own_dvec, target_dvec = dvecs
+        if self.loss_type == 'EMBLoss' or self.loss_type == 'EMB_MR_Loss':
+            y_pred = self.forward(x, target_dvec)
+            loss = self._lossfn(y_pred, y, target_dvec)
+        else:
+            y_pred = self.forward(x, own_dvec)  # train with own dvecs
+            loss = self._lossfn(y_pred, y, dvec=None)
+
         logs = {"loss": loss}
         self.log("train_loss", loss, on_epoch=True, on_step=True, prog_bar=True)
         # print(self.autoencoder.projections[0].weight)
         return {"loss": loss, "log": logs}
 
     def _shared_eval_step(self, batch):
-        x, y, dvec, name = batch
-        y_pred = self.forward(x, dvec)
-        return y, y_pred, dvec, name
+        x, y, dvecs, name = batch
+        own_dvec, target_dvec = dvecs
+        y_pred = self.forward(x, target_dvec)
+        return y, y_pred, target_dvec, name
 
     def validation_step(self, batch, batch_idx):
         y, y_pred, dvec, name = self._shared_eval_step(batch)
