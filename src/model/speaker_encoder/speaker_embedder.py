@@ -104,7 +104,12 @@ class AudioHelper:
         #     norm="slaney",
         # )
 
-        self.hann_window = torch.hann_window(window_length=self.win_length)
+        dev = torch.device('cpu')
+        if torch.cuda.is_available():
+            dev = torch.device("cuda")
+            self.mel_basis_np = self.mel_basis_np.to(dev)
+
+        self.hann_window = torch.hann_window(window_length=self.win_length, device=dev)
 
     def init_hp(self):
         self.num_mels = 40

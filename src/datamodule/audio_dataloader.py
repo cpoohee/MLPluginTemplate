@@ -243,6 +243,7 @@ class AudioDataset(Dataset):
             unrelated_speakers.remove(idx)
             id_other_unrelated = random.choice(unrelated_speakers)
             target_speaker_vec = self.df.iloc[id_other_unrelated].dvec
+            target_speaker_vec = torch.from_numpy(target_speaker_vec)
             target_speaker_name = self.df.iloc[id_other_unrelated].speaker_name
         else:
             target_speaker_vec = None

@@ -4,6 +4,8 @@ torch==2.0
 torchvision==0.15.1
 torchaudio==2.0.1
 transformers==4.26.1
+audio_encoders_pytorch==0.0.22
+archisound==0.0.6
 gdown==4.6.4
 progressbar==2.5
 tqdm==4.64.1
@@ -23,4 +25,5 @@ seaborn
 librosa
 matplotlib
 pytest
-# additional libsndfile library needed to be installed in the system, try brew install libsndfile
+# additional libsndfile1 library needed to be installed in the system, try brew install libsndfile, or sudo apt-get install libsndfile1
+# additional ffmpeg library needed to be installed in the system, try brew install ffmpeg, or sudo apt-get install ffmpeg

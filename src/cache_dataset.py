@@ -18,9 +18,11 @@ def main(cfg: DictConfig):
     data_path = root_path / cfg.dataset.data_path
 
     embedder = SpeechEmbedder()
-    chkpt_embed = torch.load(cfg.model.embedder_path, map_location=cfg.training.accelerator)
+    chkpt_embed = torch.load(cfg.model.embedder_path, map_location=torch.device(cfg.training.accelerator))
     embedder.load_state_dict(chkpt_embed)
     embedder.eval()
+
+    embedder.to(torch.device(cfg.training.accelerator))
     audio_helper = AudioHelper()
 
     # try to be as close as librosa's resampling
@@ -69,6 +71,7 @@ def form_dataframe(data_path, resampler, audio_helper, embedder, block_size_spea
             waveform_x, _ = torchaudio.load(x_file)
             waveform_x = padding(waveform_x, block_size_speaker)
             dvec = get_embedding_vec(waveform_x, resampler, audio_helper, embedder)
+            dvec = dvec.cpu().numpy()
             dvecs.append(dvec)
 
     data = {'x': x_files, 'speaker_name': speaker_names, 'dvec': dvecs}
@@ -94,6 +97,12 @@ def get_embedding_vec(waveform_speaker, resampler, audio_helper, embedder):
     # embedding d vec
     waveform_speaker = resampler(waveform_speaker)  # resample to 16kHz
     waveform_speaker = waveform_speaker.squeeze()  # [16000]
+
+    if torch.cuda.is_available():
+        if waveform_speaker.device.type == 'cpu':
+            dev = torch.device('cuda')
+            waveform_speaker = waveform_speaker.to(dev)
+
     dvec_mel, _, _ = audio_helper.get_mel_torch(waveform_speaker)
     with torch.no_grad():
         dvec = embedder(dvec_mel)

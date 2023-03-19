@@ -46,7 +46,8 @@ def main(cfg: DictConfig):
     if cfg.training.use_checkpoint_callback:
         checkpoint_callback = ModelCheckpoint(
             dirpath=cfg.training.model_checkpoint_path,
-            filename=cfg.training.experiment_name + ' {epoch}'
+            filename=cfg.training.experiment_name + ' {epoch}',
+            save_on_train_epoch_end=True
         )
     else:
         checkpoint_callback = None
