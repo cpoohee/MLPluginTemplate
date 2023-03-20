@@ -3,10 +3,12 @@ defaults:
 
 seed: 2 # choose 2 for equal male female split in nus dataset
 train_ratio: 0.7
-val_ratio: 0.5 # of the 0.3 left
-ext: 'wav'
+val_ratio: 0.5 # of the 0.3 left. if it is 1.0, all will go to test.
+ext: 'wav'  # look for this audio extension in the interim folder
 sr: 44100
-clip_interval_ms: 5000
+clip_interval_ms: 5000  #
+
+accelerator: cpu # "cpu", "cuda", "mps", "auto"
 
 # for dropping silence in audio, does not affect predict
 min_silence_len_ms: 200 # split on silences longer than 200ms

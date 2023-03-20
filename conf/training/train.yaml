@@ -1,5 +1,5 @@
 defaults:
-  - loss: mr_loss
+  - loss: mr_loss   # override this to melstft_loss if you are using MelSTFTLoss, or stft_loss if you are using STFTLoss as lossfn
 #  - loss: stft_loss
 
 batch_size: 8
@@ -8,9 +8,12 @@ max_epochs: 30
 check_val_every_n_epoch: 10
 accelerator: mps # "cpu", "cuda", "mps", "auto"
 num_workers: 6 # number of workers for training dataloader
-continue_test: false
+continue_test: false  # Proceed to run testing set if True after epochs is completed
 
+# Do note to change the above defaults loss if using STFTLoss, or MultiResolutionSTFTLoss
 lossfn: 'MSELoss' # error_to_signal, ESRLoss, DCLoss, LogCoshLoss, SNRLoss, SDSDRLoss, MSELoss, DC_SDSDR_SNR_Loss, STFTLoss, MelSTFTLoss, MultiResolutionSTFTLoss, RandomResolutionSTFTLoss, EMBLoss, EMB_MR_Loss,
+
+
 loss_preemphasis_hp_filter: false
 loss_preemphasis_hp_coeff: 0.95
 loss_preemphasis_aw_filter: false

@@ -18,11 +18,11 @@ def main(cfg: DictConfig):
     data_path = root_path / cfg.dataset.data_path
 
     embedder = SpeechEmbedder()
-    chkpt_embed = torch.load(cfg.model.embedder_path, map_location=torch.device(cfg.training.accelerator))
+    chkpt_embed = torch.load(cfg.model.embedder_path, map_location=torch.device(cfg.process_data.accelerator))
     embedder.load_state_dict(chkpt_embed)
     embedder.eval()
 
-    embedder.to(torch.device(cfg.training.accelerator))
+    embedder.to(torch.device(cfg.process_data.accelerator))
     audio_helper = AudioHelper()
 
     # try to be as close as librosa's resampling

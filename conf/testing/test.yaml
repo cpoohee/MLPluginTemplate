@@ -6,6 +6,6 @@ lossfn: 'MSELoss'
 
 checkpoint_file: './outputs/2023-03-21/01-57-35/models/auto_MSELoss epoch=3.ckpt'
 
-accelerator: mps # "mps", "cpu", "gpu", "tpu", "ipu", "auto"
+accelerator: auto # "mps", "cpu", "gpu", "tpu", "ipu", "auto"
 do_aug_in_predict: false
 do_aug_in_test: false

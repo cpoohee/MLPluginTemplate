@@ -2,8 +2,165 @@
 This project investigates the use of AI generative models create vocal doubles for mixing from a single vocal take.
 This is intended to be a short project aimed for submission for [Neural Audio Plugin Competition](https://www.theaudioprogrammer.com/neural-audio).
 
-# Installation Instructions
-- placeholder
+There are 2 separate git repository for this plugin competition. 
+The first is for the machine learning code. The second is for the plugin code for running the trained model.
+
+- https://github.com/cpoohee/SVPluginComp_ML (this repo, the ML code base)
+- https://github.com/cpoohee/NeuralDoubler (Plugin code)
+
+# Quick Installation Instructions
+
+- For those who just want to get the plugin running, go to our plugin repo https://github.com/cpoohee/NeuralDoubler, and follow the instructions there.
+- For those who wants to run the machine learning code, do follow the subsequent instructions in this repo.
+
+# Replication Instructions
+
+## Pre-requisites
+
+- The ML code is created to run with Nvidia GPU (cuda) on Ubuntu 20.04 or Apple Silicon hardware (mps) in mind.
+- The dataset and cached dataset size used are about 50 GB. Prepare at least 150GB of hdd space. 
+
+- Install Miniconda. [See guide](https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html)
+- For Apple Silicon, you will need to use Miniconda for mps acceleration. Anaconda is not recommended.
+
+- [install git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+
+- Install system libraries
+  - for ubuntu
+    - `sudo apt-get update`
+    - `sudo apt-get install libsndfile1`
+  - for mac
+    - install brew. See https://brew.sh/
+    - `brew install libsndfile`
+
+## Platforms used for development
+- Pytorch with pytorch lightning for machine learning
+- Hydra, for configurations
+- MLFlow, for experiment tracking
+- ONNX, for porting model to C++ runtime
+
+## Clone the repository
+
+Go to your terminal, create a folder that you would like to clone the repo. 
+
+Run the following command in your terminal to clone this repo. 
+
+`git clone https://github.com/cpoohee/SVPluginComp_ML`
+
+## Create conda environment
+Assuming, miniconda is properly installed, run the following to create the environment  
+`conda env create -f environment.yml`
+
+Activate the environment
+
+`conda activate wave`
+
+## Download Dataset
+
+A script is created for downloading the following datasets
+- NUS-48E
+- VocalSet
+- VCTK
+
+Go to the project root folder
+
+`cd SVPluginComp_ML`
+
+Run the download script
+
+`python src/download_data.py` 
+
+* in case of failed downloads especially from gdrive, you may need try again later. 
+
+The script will download the raw datasets and saves it onto `/data/raw` folder.
+It also transcodes and transfers useful audio files to wav into the `/data/interim` folder.
+
+## Download Pre-trained Models
+Run the download script
+
+`python src/download_pre-trained_models.py` 
+
+It will download models into the `/models/pre-trained` folder
+
+## Pre-process Dataset
+Continue running from the same project root folder,
+
+`python src/process_data.py process_data/dataset=nus_vocalset_vctk`
+
+The above command will pre-process NUS-48E, VCTK and vocalset datasets.
+
+Pre-processing will split the dataset into train/validation/test/prediction splits as stored into the `./data/processed` folder.
+It also slices the audio into 5 sec long clips.
+
+### (Optional) replace it with options:
+
+* `process_data/dataset=nus` for pre-processing just the NUS-48E dataset
+* `process_data/dataset=vctk` for pre-processing just the VCTK dataset
+
+* Edit the `conf/process_data/process_root.yaml` for more detailed configurations.
+
+## Cache speech encodings
+Run the following 
+
+`python src/cache_dataset.py model=autoencoder_speaker dataset=nus_vocalset_vctk`
+
+It will cache the downloaded pre-trained speaker encoder's embeddings.
+
+### (Optional)
+To use cuda (Nvidia)
+`python src/cache_dataset.py model=autoencoder_speaker dataset=nus_vocalset_vctk process_data.accelerator=cuda`.
+
+or mps (Apple silicon)
+`python src/cache_dataset.py model=autoencoder_speaker dataset=nus_vocalset_vctk process_data.accelerator=mps`.
+
+## Train model 
+
+`python src/train_model.py augmentations=augmentation_enable model=autoencoder_speaker dataset=nus_vocalset_vctk`
+
+* See the `conf/training/train.yaml` for more training options to override.
+  * for example, append the parameter `training.batch_size=8` to change batch size
+  * `training.learning_rate=0.0001` to change the learning rate
+  * `training.experiment_name=experiment1` to change the model's ckpt filename.
+  * `training.max_epochs=30` to change the number of epochs to train.
+  * `training.accelerator=mps` for Apple Silicon hardware
+
+* See `conf/model/autoencoder_speaker.yaml` for model specifications to override
+
+## Experiment Tracking
+Under the `./outputs/` folder, look for the current experiment's `mlruns` folder.
+
+e.g. `outputs/2023-03-20/20-11-30/mlruns`
+
+In your terminal, replace the `$PROJECT_ROOT` and outputs to your full project path and run the following.
+
+`mlflow server --backend-store-uri file:'$PROJECT_ROOT/outputs/2023-03-20/20-11-30/mlruns'`
+
+By default, you will be able to view the experiment tracking under `http://127.0.0.1:5000/` on your browser.
+
+Models will be saved into the folders as `.ckpt` under
+
+`$PROJECT_ROOT/outputs/YYYY-MM-DD/HH-MM-SS/models`
+
+By default, the model will save a checkpoint every end of epoch.
+
+## Test and Predict the model
+
+Replace `$PATH/TO/MODEL/model.ckpt` to the saved model file, and run
+
+`python src/test_model.py  model=autoencoder_speaker dataset=nus_vocalset_vctk testing.checkpoint_file="$PATH/TO/MODEL/model.ckpt"`
+
+## Export trained model into ONNX format.
+The script will convert the pytorch model into ONNX format, which will be needed for the plugin code.
+
+Replace `$PATH/TO/MODEL/model.ckpt` to the saved model file,
+Replace `"./models/onnx/my_model.onnx"` to specify the ONNX file path to be saved file, and run
+
+`python src/export_model_to_onnx.py export_to_onnx.checkpoint_file="$PATH/TO/MODEL/model.ckpt" export_to_onnx.export_filename="./models/onnx/my_model.onnx"`
+
+Copy the ONNX file to the C++ plugin code.
+
+# ---End of Instructions---
+
 
 # Background
 Some literature review on what's possible in recent audio AI, and suitable for music production are:
@@ -99,7 +256,8 @@ Lastly, the model should be small and performant enough to run in a plugin.
   - However, there is a realisation that training from scratch is not practical with current time and machine limitation.
   - Try out pre-trained auto encoders (done)
     - using an oversampled audio into an encoder trained in 48kHz seems to be a possible solution to reduce degrading quality for short sample block
-  - Try out pre-trained speaker embedding
+    - Notebook investigating auto encoders
+  - Try out pre-trained speaker embedding (done)
     - re process data folders.. etc speakerA/1.wav, speakerB/1.wav
     - do tsne plot of the output embeddings of the speakers.
   - Try out auto encoder + speaker embedding finetuning 
@@ -146,7 +304,7 @@ Lastly, the model should be small and performant enough to run in a plugin.
   - might explore `cached_conv` library to solve clicks from inferencing the beginning of the sample block. Onnx might not be able to convert it??
   - 
   
-# Brief description of Source code folder and scripts
+# Brief description of Source code folders and scripts
 - download_data.py -> downloads dataset into data/raw, then pick the audio and place into data/interim
 - download_pre-trained_models.py -> download pre-trained models into models/pre-trained for later uses. 
 - process_data.py -> use the audio from data/interim, process the audio into xx sec blocks, cuts silences and place into data/processed
