@@ -2,13 +2,13 @@ defaults:
   - loss: mr_loss
 #  - loss: stft_loss
 
-batch_size: 32
+batch_size: 40
 learning_rate: 0.001
 max_epochs: 30
 check_val_every_n_epoch: 10
 accelerator: cuda # "cpu", "cuda", "mps", "auto"
 num_workers: 6 # number of workers for training dataloader
-continue_test: true
+continue_test: false
 
 lossfn: 'MSELoss' # error_to_signal, ESRLoss, DCLoss, LogCoshLoss, SNRLoss, SDSDRLoss, MSELoss, DC_SDSDR_SNR_Loss, STFTLoss, MelSTFTLoss, MultiResolutionSTFTLoss, RandomResolutionSTFTLoss, EMBLoss, EMB_MR_Loss,
 loss_preemphasis_hp_filter: false
