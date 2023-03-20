@@ -18,7 +18,8 @@ The first is for the machine learning code. The second is for the plugin code fo
 ## Pre-requisites
 
 - The ML code is created to run with Nvidia GPU (cuda) on Ubuntu 20.04 or Apple Silicon hardware (mps) in mind.
-- The dataset and cached dataset size used are about 50 GB. Prepare at least 150GB of hdd space. 
+  - For installing cuda 11.8 drivers (https://cloud.google.com/compute/docs/gpus/install-drivers-gpu)
+- The dataset and cached dataset size used are about 50 GB. Prepare at least 150GB of free hdd space. 
 
 - Install Miniconda. [See guide](https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html)
 - For Apple Silicon, you will need to use Miniconda for mps acceleration. Anaconda is not recommended.
@@ -163,40 +164,39 @@ Copy the ONNX file to the C++ plugin code.
 
 
 # Background
-Some literature review on what's possible in recent audio AI, and suitable for music production are:
+With some literature review, some possibilities in audio AI that are suitable for music production are:
 
-- audio source separation
 - Singing/Speech Voice Conversion (VC)
 - Singing/Speech Style Conversion
 - Text to Speech (TTS)
-- Singing Voice Synthesis 
+- Singing Voice Synthesis
+- Audio source separation
 
 There are definitely more AI applications than listed above.
 
-Most of the demos are lacking in fidelity with audio downsampled to 20khz or less. 
+However, most of the demos are lacking in fidelity with audio downsampled to 20khz or less. 
+Ideally it should be is at least 44100Hz.
 The resultant generated audio are therefore missing high-end frequencies 10khz and more.
-Our plugin should avoid that sacrifice fidelity. 
-
-Personally, I have experience in recording and mixing music too. 
-In a live performance recording with a small group of musicians (5 people), it is difficult to get a refined vocal lead/background performances comparable to highly produced production.
+Our plugin should avoid not sacrifice fidelity. 
 
 In a typical highly produced multitrack for mixing, the vocal double/triples or more could be recorded for mixing. 
-An experienced mixer will be able to utilise the doubling effect to enhance the performance by adding the double track balanced just below the lead track.
+An experienced mixer will be able to utilise the doubling effect to enhance the performance by adding the double track balanced just below the lead vocal track.
 The resulting vocal performance will cut through the mix and sound thicker.
 
 A simple copy of the same track does not work as doubling as the sum of two identical track just results in a 3db louder audio. 
-Therefore, a double track is always a different take from the lead track. 
-The differences in (and not limited to) phase, pitch, timing, tone of a fresh take all contributes to the doubling effect.
+Therefore, a double track is always taken from a different take. 
+The differences in (and not limited to) phase, pitch, timing, timbre of a fresh take all contributes to the doubling effect.
 
-Even more so for background vocals, they are usually more than 2 takes of the same parts, multiplied by the harmony lines.
+It is even more so for background vocals which are usually produced with more than 2 takes of the same parts, multiplied by the harmony lines.
 
 Without double tracks, a mixer do make use of some existing artificial techniques that mimic doubling. 
 For example, de-tuning, delaying, chorusing a copy the same track. See Waves's doubler.
-However, a mixer will want to have the option to choose the real double take over the synthetic doubler.   
+Given an option to a mixer however, it is likely we will choose the real double take over the synthetic doubler.   
 
-Few have approached the generative audio from the same audio to produce a double take that is suitable for the audio doubling effect. 
-Probably it is not exciting enough to publish a research work, but for a mixer, this is a potential time and money saver.
-It is also hoped that with enough variations and stacked layers of this plugin, it will sound natural enough for the listener.  
+Few have approached the generative audio for producing double takes that is suitable for the audio doubling effect. 
+For a mixer, this is a potential time and money saver.
+
+It is also hoped that using vocal conversion, it will produce a timbre based doubling effect sounding natural enough for the listener.  
 
 Some papers that might be related are: 
 
