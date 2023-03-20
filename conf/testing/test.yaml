@@ -1,10 +1,10 @@
-model_name: 'AutoEncoder_Speaker_PL' # WaveNet_PL, WaveUNet_PL, AutoEncoder_PL
+model_name: 'AutoEncoder_Speaker_PL2' # WaveNet_PL, WaveUNet_PL, AutoEncoder_PL
 
 defaults:
   - loss: mr_loss  # loss params, if needed
 lossfn: 'MSELoss'
 
-checkpoint_file: './outputs/2023-03-19/23-08-29/models/auto_EMB_MR_Loss epoch=6.ckpt'
+checkpoint_file: './outputs/2023-03-21/01-57-35/models/auto_MSELoss epoch=3.ckpt'
 
 accelerator: mps # "mps", "cpu", "gpu", "tpu", "ipu", "auto"
 do_aug_in_predict: false

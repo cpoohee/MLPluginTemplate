@@ -34,7 +34,8 @@ class AudioDataModule(pl.LightningDataModule):
         self.cfg = cfg
 
     def setup(self, stage: str):
-        if self.cfg.model.model_name == 'AutoEncoder_Speaker_PL':
+        if self.cfg.model.model_name == 'AutoEncoder_Speaker_PL' or \
+            self.cfg.model.model_name == 'AutoEncoder_Speaker_PL2':
             if stage == "fit":
                 self.df_train = pd.read_pickle(self.data_dir / 'train' / 'dataframe.pkl')
                 self.df_val = pd.read_pickle(self.data_dir / 'val' / 'dataframe.pkl')

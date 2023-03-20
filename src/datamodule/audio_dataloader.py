@@ -243,7 +243,8 @@ class AudioDataset(Dataset):
         # speaker_path = self.df.iloc[id_other].x
 
         waveform_x, _ = torchaudio.load(x_path)
-        if self.model_name == 'AutoEncoder_Speaker_PL':
+        if self.model_name == 'AutoEncoder_Speaker_PL' or \
+            self.model_name == 'AutoEncoder_Speaker_PL2':
             unrelated_speakers = [i for i in range(0, len(self.df)) if i not in related_speakers]
             unrelated_speakers.remove(idx)
             id_other_unrelated = random.choice(unrelated_speakers)

@@ -75,7 +75,8 @@ class AudioDatasetPred(Dataset):
         # waveform_speaker = self.__padding(waveform_speaker, self.block_size_speaker)
 
         # get speaker embeddings
-        if self.model_name == 'AutoEncoder_Speaker_PL':
+        if self.model_name == 'AutoEncoder_Speaker_PL' or  \
+                self.model_name == 'AutoEncoder_Speaker_PL2':
             dvec_related = self.df.iloc[id_other_related].dvec
             dvec_unrelated = self.df.iloc[id_other_unrelated].dvec
 

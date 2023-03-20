@@ -11,6 +11,7 @@ from src.model.wavenet import WaveNet_PL
 from src.model.waveUnet import WaveUNet_PL
 from src.model.autoencoder import AutoEncoder_PL
 from src.model.autoencoder_speaker import AutoEncoder_Speaker_PL
+from src.model.autoencoder_speaker2 import AutoEncoder_Speaker_PL2
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import MLFlowLogger
 
@@ -31,6 +32,10 @@ def main(cfg: DictConfig):
         cfg.model.embedder_path = cur_path / Path(cfg.model.embedder_path)
         cfg.model.ae_path = cur_path / Path(cfg.model.ae_path)
         model = AutoEncoder_Speaker_PL(cfg)
+    elif cfg.model.model_name == 'AutoEncoder_Speaker_PL2':
+        cfg.model.embedder_path = cur_path / Path(cfg.model.embedder_path)
+        cfg.model.ae_path = cur_path / Path(cfg.model.ae_path)
+        model = AutoEncoder_Speaker_PL2(cfg)
     else:
         assert False, " model name is invalid!"
 
