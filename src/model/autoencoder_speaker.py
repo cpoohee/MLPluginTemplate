@@ -160,12 +160,12 @@ class AutoEncoder_Speaker(nn.Module):
         self.ae_channel_size = ae_config.channels
         emb_size = cfg.model.emb_size
         self.latent_slice_size = cfg.model.latent_slice_size
-        lstm_layers = cfg.model.lstm_layers
+        self.lstm_layers = cfg.model.lstm_layers
 
         # 32 ae_channel_size
         self.lstms = nn.ModuleList([nn.LSTM(input_size=emb_size + self.latent_slice_size,
                                             hidden_size=self.latent_slice_size,
-                                            num_layers=lstm_layers,
+                                            num_layers=self.lstm_layers,
                                             bidirectional=True,
                                             batch_first=True) for _ in
                                     range(0, self.ae_channel_size)])
@@ -173,11 +173,29 @@ class AutoEncoder_Speaker(nn.Module):
         self.projections = nn.ModuleList([nn.Linear(in_features=self.latent_slice_size * 2,
                                                     out_features=self.latent_slice_size)
                                           for _ in range(0, self.ae_channel_size)])
+
+        # self.dev = torch.device(cfg.training.accelerator)
+        # self.init_hidden(cfg.training.batch_size)
+
         self.activations = nn.Tanh()  # follows the same activation output from the encoder z
+
+    # def init_hidden(self, batch_size):
+    #     self.prev_h0 = [torch.zeros(self.lstm_layers * 2, batch_size, \
+    #                                 self.latent_slice_size, requires_grad=False, device=self.dev)
+    #                     for _ in range(0, self.ae_channel_size)]
+    #
+    #     self.prev_c0 = [torch.zeros(self.lstm_layers * 2, batch_size, \
+    #                                 self.latent_slice_size, requires_grad=False, device=self.dev)
+    #                     for _ in range(0, self.ae_channel_size)]
 
     def fuse_embedding(self, z, dvec):
         # z is [b, 32 channels, xsize/32 ]
         z_fuses = []
+
+        # work ard to odd shaped batched input
+        # b_size = z.size()[0]
+        # if self.prev_h0[0].size()[1] != b_size:
+        #     self.init_hidden(b_size)
 
         for i, lstm in enumerate(self.lstms):  # for each channel
             z_channel = z[:, i, :]  # z_channel is [b, xsize/32]
@@ -195,7 +213,15 @@ class AutoEncoder_Speaker(nn.Module):
             z_channel_emb_seq_in = torch.stack(z_partial_ins, dim=1)
 
             # tensor [b, num_z_partials ,latent_slice_size*2] due to bidirectional
+
             z_channel_emb_seq_out, (h, c) = lstm(z_channel_emb_seq_in)
+
+            # h0 = self.prev_h0[i]
+            # c0 = self.prev_c0[i]
+            # # might need to init h_0, c_0 to prevent cyclic noise
+            # z_channel_emb_seq_out, (h, c) = lstm(z_channel_emb_seq_in, (h0, c0))
+            # self.prev_h0[i] = h.detach()  # remove the temp states from backward cal
+            # self.prev_c0[i] = c.detach()  # remove the temp states from backward cal
 
             # reproject to input dimensions
             # list of slices [ [b , latent_slice_size],...]
