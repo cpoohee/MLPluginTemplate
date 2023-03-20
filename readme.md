@@ -302,7 +302,7 @@ Lastly, the model should be small and performant enough to run in a plugin.
   - there is an issue of degrading audio from short sample blocks, any lower than 32768 samples. (nearly 0.68 sec)
   - we should be able to oversample the audio, passing 32768 samples into the pre-trained model(trained in 48kHz), which represents a shorter blocktime (0.17 sec).
   - might explore `cached_conv` library to solve clicks from inferencing the beginning of the sample block. Onnx might not be able to convert it??
-  - 
+  - the 32 channels in the bottleneck vector z, where it is sized [batch, 32, T], is likely to represent some frequency bands based on the quick experiment on zeroing out some channels. See (notebooks/reducing_bottleneck_of_AE(channels).ipynb) 
   
 # Brief description of Source code folders and scripts
 - download_data.py -> downloads dataset into data/raw, then pick the audio and place into data/interim
