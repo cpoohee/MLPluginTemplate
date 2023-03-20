@@ -15,11 +15,11 @@ The first is for the machine learning code. The second is for the plugin code fo
 
 # Replication Instructions
 
-## Pre-requisites
+## 1) Pre-requisites
 
 - The ML code is created to run with Nvidia GPU (cuda) on Ubuntu 20.04 or Apple Silicon hardware (mps) in mind.
   - For installing cuda 11.8 drivers (https://cloud.google.com/compute/docs/gpus/install-drivers-gpu)
-- The dataset and cached dataset size used are about 50 GB. Prepare at least 150GB of free hdd space. 
+- Prepare at least 150GB of free hdd space. The dataset and cached dataset size used are about 50 GB. 
 
 - Install Miniconda. [See guide](https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html)
 - For Apple Silicon, you will need to use Miniconda for mps acceleration. Anaconda is not recommended.
@@ -34,13 +34,13 @@ The first is for the machine learning code. The second is for the plugin code fo
     - install brew. See https://brew.sh/
     - `brew install libsndfile`
 
-## Platforms used for development
+## 2) Major Libraries Used for Development
 - Pytorch with pytorch lightning for machine learning
 - Hydra, for configurations
 - MLFlow, for experiment tracking
 - ONNX, for porting model to C++ runtime
 
-## Clone the repository
+## 3) Clone the repository
 
 Go to your terminal, create a folder that you would like to clone the repo. 
 
@@ -48,7 +48,7 @@ Run the following command in your terminal to clone this repo.
 
 `git clone https://github.com/cpoohee/SVPluginComp_ML`
 
-## Create conda environment
+## 4) Create conda environment
 Assuming, miniconda is properly installed, run the following to create the environment  
 `conda env create -f environment.yml`
 
@@ -56,7 +56,7 @@ Activate the environment
 
 `conda activate wave`
 
-## Download Dataset
+## 5) Download Dataset
 
 A script is created for downloading the following datasets
 - NUS-48E
@@ -76,14 +76,14 @@ Run the download script
 The script will download the raw datasets and saves it onto `/data/raw` folder.
 It also transcodes and transfers useful audio files to wav into the `/data/interim` folder.
 
-## Download Pre-trained Models
+## 6) Download Pre-trained Models
 Run the download script
 
 `python src/download_pre-trained_models.py` 
 
 It will download models into the `/models/pre-trained` folder
 
-## Pre-process Dataset
+## 7) Pre-process Dataset
 Continue running from the same project root folder,
 
 `python src/process_data.py process_data/dataset=nus_vocalset_vctk`
@@ -100,7 +100,7 @@ It also slices the audio into 5 sec long clips.
 
 * Edit the `conf/process_data/process_root.yaml` for more detailed configurations.
 
-## Cache speech encodings
+## 8) Cache speech encodings
 Run the following 
 
 `python src/cache_dataset.py model=autoencoder_speaker dataset=nus_vocalset_vctk`
@@ -114,7 +114,7 @@ To use cuda (Nvidia)
 or mps (Apple silicon)
 `python src/cache_dataset.py model=autoencoder_speaker dataset=nus_vocalset_vctk process_data.accelerator=mps`.
 
-## Train model 
+## 9) Train model 
 
 `python src/train_model.py augmentations=augmentation_enable model=autoencoder_speaker dataset=nus_vocalset_vctk`
 
@@ -127,7 +127,7 @@ or mps (Apple silicon)
 
 * See `conf/model/autoencoder_speaker.yaml` for model specifications to override
 
-## Experiment Tracking
+## 10) Experiment Tracking
 Under the `./outputs/` folder, look for the current experiment's `mlruns` folder.
 
 e.g. `outputs/2023-03-20/20-11-30/mlruns`
@@ -144,13 +144,13 @@ Models will be saved into the folders as `.ckpt` under
 
 By default, the model will save a checkpoint every end of epoch.
 
-## Test and Predict the model
+## 11) Test and Predict the model
 
 Replace `$PATH/TO/MODEL/model.ckpt` to the saved model file, and run
 
 `python src/test_model.py  model=autoencoder_speaker dataset=nus_vocalset_vctk testing.checkpoint_file="$PATH/TO/MODEL/model.ckpt"`
 
-## Export trained model into ONNX format.
+## 12) Export trained model into ONNX format.
 The script will convert the pytorch model into ONNX format, which will be needed for the plugin code.
 
 Replace `$PATH/TO/MODEL/model.ckpt` to the saved model file,
@@ -304,7 +304,7 @@ Lastly, the model should be small and performant enough to run in a plugin.
   - might explore `cached_conv` library to solve clicks from inferencing the beginning of the sample block. Onnx might not be able to convert it??
   - the 32 channels in the bottleneck vector z, where it is sized [batch, 32, T], is likely to represent some frequency bands based on the quick experiment on zeroing out some channels. See (notebooks/reducing_bottleneck_of_AE(channels).ipynb) 
   
-# Brief description of Source code folders and scripts
+# Description of Scripts
 - download_data.py -> downloads dataset into data/raw, then pick the audio and place into data/interim
 - download_pre-trained_models.py -> download pre-trained models into models/pre-trained for later uses. 
 - process_data.py -> use the audio from data/interim, process the audio into xx sec blocks, cuts silences and place into data/processed
