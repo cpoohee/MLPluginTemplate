@@ -3,7 +3,6 @@ embedder_path: './models/pre-trained/voice_filter_embedder.pt'
 ae_path: './models/pre-trained/ae'
 bottleneck_dropout: 0.000
 freeze_encoder: true
-freeze_decoder: true
+freeze_decoder: false
 emb_size: 256
 latent_slice_size: 1024 # choose a number divisible by blocksize
-lstm_layers: 1
