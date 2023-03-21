@@ -92,6 +92,8 @@ def main(cfg: DictConfig):
                                    batch_size=batch_size)
         trainer.test(model, dataloaders=dm_test)
 
+    sys.stdout.log.close()
+
 
 if __name__ == "__main__":
     main()
