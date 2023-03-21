@@ -2,7 +2,7 @@ defaults:
   - loss: mr_loss   # override this to melstft_loss if you are using MelSTFTLoss, or stft_loss if you are using STFTLoss as lossfn
 #  - loss: stft_loss
 
-batch_size: 8
+batch_size: 32
 learning_rate: 0.0001
 max_epochs: 30
 check_val_every_n_epoch: 10

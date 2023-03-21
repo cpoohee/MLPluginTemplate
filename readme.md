@@ -98,7 +98,7 @@ It also slices the audio into 5 sec long clips.
 * `process_data/dataset=nus` for pre-processing just the NUS-48E dataset
 * `process_data/dataset=vctk` for pre-processing just the VCTK dataset
 
-* Edit the `conf/process_data/process_root.yaml` for more detailed configurations.
+* See the `conf/process_data/process_root.yaml` for more detailed configurations.
 
 ## 8) Cache speech encodings
 Run the following 
@@ -121,11 +121,11 @@ or mps (Apple silicon)
 * See the `conf/training/train.yaml` for more training options to override.
   * for example, append the parameter `training.batch_size=8` to change batch size
   * `training.learning_rate=0.0001` to change the learning rate
-  * `training.experiment_name=experiment1` to change the model's ckpt filename.
+  * `training.experiment_name="experiment1"` to change the model's ckpt filename.
   * `training.max_epochs=30` to change the number of epochs to train.
   * `training.accelerator=mps` for Apple Silicon hardware
 
-* See `conf/model/autoencoder_speaker.yaml` for model specifications to override
+* See `conf/model/autoencoder_speaker.yaml` for model specifications to override.
 
 ## 10) Experiment Tracking
 Under the `./outputs/` folder, look for the current experiment's `mlruns` folder.
@@ -136,13 +136,17 @@ In your terminal, replace the `$PROJECT_ROOT` and outputs to your full project p
 
 `mlflow server --backend-store-uri file:'$PROJECT_ROOT/outputs/2023-03-20/20-11-30/mlruns'`
 
-By default, you will be able to view the experiment tracking under `http://127.0.0.1:5000/` on your browser.
+By default, you will be able to view the experiment tracking under `http://127.0.0.1:5000/` on your browser. 
+The above is showing the configuration for MLFlow to run on localhost. 
+
+* (Optional) it is possible to set up an MLFlow tracking server and configure the tracking uri under `training.tracking_uri`. 
+See https://mlflow.org/docs/latest/tracking.html for more info.
 
 Models will be saved into the folders as `.ckpt` under
 
 `$PROJECT_ROOT/outputs/YYYY-MM-DD/HH-MM-SS/models`
 
-By default, the model will save a checkpoint every end of epoch.
+By default, the model will save a checkpoint at every end of an epoch.
 
 ## 11) Test and Predict the model
 
@@ -164,7 +168,7 @@ Copy the ONNX file to the C++ plugin code.
 
 
 # Background
-With some literature review, some possibilities in audio AI that are suitable for music production are:
+After some literature review, some possibilities in audio AI that are suitable for music production are:
 
 - Singing/Speech Voice Conversion (VC)
 - Singing/Speech Style Conversion
@@ -204,24 +208,6 @@ Some papers that might be related are:
 - [Tamaru, Hiroki, et al. "Generative moment matching network-based neural double-tracking for synthesized and natural singing voices." IEICE TRANSACTIONS on Information and Systems 103.3 (2020): 639-647.](https://www.jstage.jst.go.jp/article/transinf/E103.D/3/E103.D_2019EDP7228/_pdf)
 - [AlBadawy, Ehab A., and Siwei Lyu. "Voice Conversion Using Speech-to-Speech Neuro-Style Transfer." Interspeech. 2020.](https://ebadawy.github.io/post/speech_style_transfer/Albadawy_et_al-2020-INTERSPEECH.pdf)
 - [AUTOVC: Zero-Shot Voice Style Transfer with Only Autoencoder Loss](https://arxiv.org/pdf/1905.05879.pdf)
-- 
-For ML datasets, usually we feed an input X and target Y for the model to learn (X->Y).
-
-Potentially, our dataset for double takes could be easier if the model learns by using the same input audio as the target.
-- (X -> X).
-
-The model will therefore predict X* from the input X.
-- (X->X*).
-
-Our (X - X*) should be non-zero but close enough to be a good double. 
-This will be subjected to some measurable metrics for objective comparison. 
-
-If we are able to find double take datasets, it will be useful as well. 
-That is X is the lead, Y is the double.
-
-The end result should produce natural sounding audio which might only be subjectively judged.
-
-Lastly, the model should be small and performant enough to run in a plugin.
 
 # Goal
 - To generate high quality audio usable for mixing. (sample rate >= 44100Hz)
@@ -230,9 +216,53 @@ Lastly, the model should be small and performant enough to run in a plugin.
 - Model size should be acceptable for plugin installation. ( <200MB )
 - CPU usage should also be acceptable. (10 instances running real time in a DAW at the same time)
 
+The end result should produce natural sounding audio which might only be subjectively judged.
+
 # Stretched Goal
 - provide a vocal personality for VC, and use it for background harmony.
 - auto generate harmony similar to Waves's Harmony plugin, with our vocal personality.
+
+# Our Method
+For ML datasets, usually we feed an input X and target Y for the model to learn (X->Y).
+
+However, our target Y is not an exact data since we need the model to generate a new voice.
+
+One way is to utilise existing pre-trained speaker encoder from https://github.com/mindslab-ai/voicefilter.
+This is where X -> speaker encoder -> S, where X is a waveform, S is a speaker embedding vector of 256. 
+The speaker embedder was originally used to classify and identify 3549 speakers from libriSpeech and VoxCeleb1 dataset. 
+Therefore, it can generate embeddings that contain latent variables representative of a speaker's voice. 
+The AutoVC also used a pre-trained speaker encoder for their Voice conversion model.   
+
+We investigated Real-time Voice Cloning (RTVC) encoder and Voice Filter's (VF) encoder. 
+In our notebook `investigate_speaker_embedding_RTVC.ipynb` and `investigate_speaker_embedding_VF.ipynb`, 
+we show that VF encoder is likely to be more performant using the t-SNE plot.  
+
+Next we looked for a pre-trained AutoEncoder for generative audio. 
+See our notebook `investigate_pre-trained_autoencoder.ipynb` ,`investigate_rave_autoencoder.ipynb`.
+Our brief inference in the notebook studying the sound generated from Rave's Auto Encoder and Archisound https://github.com/archinetai/archisound shows that using Archisound's 
+`autoencoder1d-AT-v1 Reconstruction` model could sound better for our singing voice data.
+
+Studying further on the `autoencoder1d-AT-v1 Reconstruction` bottlenecks, we have findings shown in notebooks
+`reducing_bottleneck_of_AE(channels).ipynb` and `reducing_bottleneck_of_AE.ipynb`. 
+It shows how much audio information is being represented in the latent z bottleneck vectors. 
+
+TODO: write the final method of fusing the speaker embeddings (dvec) into latent z.
+
+Pseudo code
+- z' = LSTM(concat [dvec, z]) , or
+- z' = StyleAdaptiveLayerNorm(z, dvec)
+
+
+TODO: describe final loss function
+- MSE
+- Multi resolution STFT
+- Using speaker encoder's embedding, and do MSE on it.
+
+TODO: freezing method.
+- any drop out ? 
+- Freeze encoder, decoder, train fuser z and dvec
+- unfreeze decoder,
+- vs unfreezed training of decoder and fuser. 
 
 # ToDos
 - Create a simple JUCE plugin without AI as a start. (done)
