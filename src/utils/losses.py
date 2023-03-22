@@ -206,6 +206,10 @@ class Losses:
         elif loss_type == 'EMBLoss':
             self.loss = EMBLoss(self.cfg)
 
+        elif loss_type == 'EMB_MSE_Loss':
+            self.loss_emb = EMBLoss(self.cfg)
+            self.loss_mse = torch.nn.MSELoss()
+
         elif loss_type == 'EMB_MR_Loss':
             self.loss_emb = EMBLoss(self.cfg)
             self.loss_mr = auraloss.freq.MultiResolutionSTFTLoss(
@@ -213,7 +217,7 @@ class Losses:
                     win_lengths=OmegaConf.to_object(self.cfg.training.loss.win_lengths),
                     hop_sizes=OmegaConf.to_object(self.cfg.training.loss.hop_sizes),
                     w_phs=self.cfg.training.loss.w_phs,
-                    device=self.device);
+                    device=self.device)
         else:
             assert False
 
@@ -244,6 +248,11 @@ class Losses:
         elif self.loss_type == 'EMBLoss':
             emb_loss = self.loss(input, target)  # dvec is from target
             return emb_loss*3000  # to compensate small number of mse emb loss
+
+        elif self.loss_type == 'EMB_MSE_Loss':
+            emb_loss = self.loss_emb(input, dvec)
+            mse_loss = self.loss_mse(input, target)
+            return mse_loss + emb_loss
 
         elif self.loss_type == 'EMB_MR_Loss':
             emb_loss = self.loss_emb(input, dvec)
