@@ -1,4 +1,5 @@
 model_name: 'AutoEncoder_Speaker_PL2' # WaveNet_PL, WaveUNet_PL, AutoEncoder_PL
+#model_name: 'WaveNet_PL'
 
 defaults:
   - loss: mr_loss  # loss params, if needed

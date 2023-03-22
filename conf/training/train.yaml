@@ -11,7 +11,7 @@ num_workers: 6 # number of workers for training dataloader
 continue_test: false  # Proceed to run testing set if True after epochs is completed
 
 # Do note to change the above defaults loss if using STFTLoss, or MultiResolutionSTFTLoss
-lossfn: 'EMB_MSE_Loss' # error_to_signal, ESRLoss, DCLoss, LogCoshLoss, SNRLoss, SDSDRLoss, MSELoss, DC_SDSDR_SNR_Loss, STFTLoss, MelSTFTLoss, MultiResolutionSTFTLoss, RandomResolutionSTFTLoss, EMBLoss, EMB_MR_Loss, EMB_MSE_Loss
+lossfn: 'MSELoss' # error_to_signal, ESRLoss, DCLoss, LogCoshLoss, SNRLoss, SDSDRLoss, MSELoss, DC_SDSDR_SNR_Loss, STFTLoss, MelSTFTLoss, MultiResolutionSTFTLoss, RandomResolutionSTFTLoss, EMBLoss, EMB_MR_Loss, EMB_MSE_Loss
 
 
 loss_preemphasis_hp_filter: false
@@ -19,10 +19,10 @@ loss_preemphasis_hp_coeff: 0.95
 loss_preemphasis_aw_filter: false
 
 
-experiment_name: 'auto2_still_freeze_EMB_MSE_Loss'
+experiment_name: 'wavenet_MSELoss'
 
 
-resume_checkpoint: true
+resume_checkpoint: false
 checkpoint_file: './outputs/2023-03-22/08-05-43/models/auto2_freeze_EMB_MSE_Loss.ckpt'
 
 use_checkpoint_callback: true

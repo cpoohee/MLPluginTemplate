@@ -83,8 +83,8 @@ class AudioDatasetPred(Dataset):
             dvec = (dvec_related, dvec_unrelated)
             speaker_names = (speaker_name, unrelated_speakers_name)
         else:
-            dvec = (None, None)
-            speaker_names = (speaker_name, None)
+            dvec = ([], [])
+            speaker_names = (speaker_name, '')
 
         # waveform_x = torch.cat((waveform_x, waveform_x), dim=0)  # fake stereo
         # waveform_y = torch.cat((waveform_y, waveform_y), dim=0)

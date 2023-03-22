@@ -235,16 +235,16 @@ class AudioDataset(Dataset):
         speaker_name = data['speaker_name']
         related_speakers = data['related_speakers']
 
-        own_dvec = self.df.iloc[idx].dvec
-        if isinstance(own_dvec, np.ndarray):
-            own_dvec = torch.from_numpy(own_dvec)
-
         # id_other = random.choice(related_speakers)
         # speaker_path = self.df.iloc[id_other].x
 
         waveform_x, _ = torchaudio.load(x_path)
         if self.model_name == 'AutoEncoder_Speaker_PL' or \
             self.model_name == 'AutoEncoder_Speaker_PL2':
+            own_dvec = self.df.iloc[idx].dvec
+            if isinstance(own_dvec, np.ndarray):
+                own_dvec = torch.from_numpy(own_dvec)
+
             unrelated_speakers = [i for i in range(0, len(self.df)) if i not in related_speakers]
             unrelated_speakers.remove(idx)
             id_other_unrelated = random.choice(unrelated_speakers)
@@ -253,8 +253,9 @@ class AudioDataset(Dataset):
                 target_speaker_vec = torch.from_numpy(target_speaker_vec)
             target_speaker_name = self.df.iloc[id_other_unrelated].speaker_name
         else:
-            target_speaker_vec = None
-            target_speaker_name = None
+            own_dvec = []
+            target_speaker_vec = []
+            target_speaker_name = ""
 
         waveform_x = self.__padding(waveform_x, self.block_size)
 

@@ -73,6 +73,11 @@ def main(cfg: DictConfig):
     if model.device != dev:
         model = model.to(dev)
 
+    pred_with_dvec = False
+    if cfg.testing.model_name == 'AutoEncoder_Speaker_PL' or \
+            cfg.testing.model_name == 'AutoEncoder_Speaker_PL2':
+        pred_with_dvec = True
+
     with torch.no_grad():
         for batch in tqdm(dm_pred, desc=" predict progress", position=0):
             x, y, (dvec, dvec_unrelated), (name, name_unrelated) = batch
@@ -81,17 +86,19 @@ def main(cfg: DictConfig):
                 x = x.to(dev)
             if y.device != dev:
                 y = y.to(dev)
-            if dvec.device != dev:
-                dvec = dvec.to(dev)
-            if dvec_unrelated is not None and dvec_unrelated != dev:
-                dvec_unrelated = dvec_unrelated.to(dev)
+
+            if pred_with_dvec:
+                if dvec.device != dev:
+                    dvec = dvec.to(dev)
+                if isinstance(dvec_unrelated, torch.Tensor) and dvec_unrelated.device != dev:
+                    dvec_unrelated = dvec_unrelated.to(dev)
 
             segments = x.size()[2] // cfg.dataset.block_size
             resized_samples = segments * cfg.dataset.block_size
             x = x[:, :, 0:resized_samples]
             y = y[:, :, 0:resized_samples]
 
-            if dvec_unrelated is None:
+            if not pred_with_dvec:
                 # do predict without dvec
                 y_pred = torch.zeros_like(y)
                 for i in tqdm(range(0, segments), desc=" sample progress", position=1, leave=False):

@@ -163,6 +163,7 @@ class WaveUNet_PL(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         y, y_pred = self._shared_eval_step(batch)
         loss = self._lossfn(y, y_pred)
+        self.val_step_outputs.append(loss)
         return {"val_loss": loss}
 
     def on_validation_epoch_end(self):
@@ -175,6 +176,7 @@ class WaveUNet_PL(pl.LightningModule):
     def test_step(self, batch, batch_idx):
         y, y_pred = self._shared_eval_step(batch)
         loss = self._lossfn(y, y_pred)
+        self.test_step_outputs.append(loss)
         return {"test_loss": loss}
 
     def on_test_epoch_end(self):
