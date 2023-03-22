@@ -4,8 +4,8 @@ defaults:
   - loss: mr_loss  # loss params, if needed
 lossfn: 'MSELoss'
 
-checkpoint_file: './outputs/2023-03-21/01-57-35/models/auto_MSELoss epoch=3.ckpt'
+checkpoint_file: './outputs/2023-03-22/16-42-52/models/auto2_EMB_MSE_Loss.ckpt'
 
-accelerator: auto # "mps", "cpu", "gpu", "tpu", "ipu", "auto"
+accelerator: mps # "mps", "cpu", "gpu", "tpu", "ipu", "auto"
 do_aug_in_predict: false
 do_aug_in_test: false

@@ -191,7 +191,6 @@ class AutoEncoder_Speaker2(nn.Module):
         self.ae_channel_size = ae_config.channels
         emb_size = cfg.model.emb_size
         self.latent_slice_size = cfg.model.latent_slice_size
-        self.lstm_layers = cfg.model.lstm_layers
 
         # 32 ae_channel_size
         self.aslns = nn.ModuleList([StyleAdaptiveLayerNorm(in_channel=self.latent_slice_size,
@@ -299,7 +298,7 @@ class AutoEncoder_Speaker_PL2(pl.LightningModule):
         if self.loss_type == 'EMBLoss':
             return self.loss.forward(y_pred, dvec)
 
-        if self.loss_type == 'EMB_MR_Loss':
+        if self.loss_type == 'EMB_MR_Loss' or self.loss_type == 'EMB_MSE_Loss':
             return self.loss.forward(y_pred, y, dvec)
 
         return self.loss.forward(y_pred, y)
@@ -308,7 +307,9 @@ class AutoEncoder_Speaker_PL2(pl.LightningModule):
         # y, y_pred, dvecs, name = self._shared_eval_step(batch)
         x, y, dvecs, name = batch
         own_dvec, target_dvec = dvecs
-        if self.loss_type == 'EMBLoss' or self.loss_type == 'EMB_MR_Loss':
+        if self.loss_type == 'EMBLoss' or \
+                self.loss_type == 'EMB_MR_Loss' or \
+                self.loss_type == 'EMB_MSE_Loss':
             y_pred = self.forward(x, target_dvec)
             loss = self._lossfn(y_pred, y, target_dvec)
         else:
