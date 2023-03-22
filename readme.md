@@ -26,13 +26,18 @@ The first is for the machine learning code. The second is for the plugin code fo
 
 - [install git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 
-- Install system libraries
-  - for ubuntu
-    - `sudo apt-get update`
-    - `sudo apt-get install libsndfile1`
-  - for mac
-    - install brew. See https://brew.sh/
-    - `brew install libsndfile`
+### Install system libraries
+For Ubuntu
+```bash 
+sudo apt-get update
+sudo apt-get install libsndfile1
+```
+
+For Macos
+  - install brew. See https://brew.sh/
+```bash 
+brew install libsndfile
+```
 
 ## 2) Major Libraries Used for Development
 - Pytorch with pytorch lightning for machine learning
@@ -45,16 +50,20 @@ The first is for the machine learning code. The second is for the plugin code fo
 Go to your terminal, create a folder that you would like to clone the repo. 
 
 Run the following command in your terminal to clone this repo. 
-
-`git clone https://github.com/cpoohee/SVPluginComp_ML`
+```bash 
+git clone https://github.com/cpoohee/SVPluginComp_ML
+```
 
 ## 4) Create conda environment
-Assuming, miniconda is properly installed, run the following to create the environment  
-`conda env create -f environment.yml`
+Assuming, miniconda is properly installed, run the following to create the environment
+```bash 
+conda env create -f environment.yml
+```
 
 Activate the environment
-
-`conda activate wave`
+```bash 
+conda activate wave
+```
 
 ## 5) Download Dataset
 
@@ -65,11 +74,14 @@ A script is created for downloading the following datasets
 
 Go to the project root folder
 
-`cd SVPluginComp_ML`
+```bash 
+cd SVPluginComp_ML
+```
 
 Run the download script
-
-`python src/download_data.py` 
+```bash 
+python src/download_data.py
+``` 
 
 * in case of failed downloads especially from gdrive, you may need try again later. 
 
@@ -79,14 +91,18 @@ It also transcodes and transfers useful audio files to wav into the `/data/inter
 ## 6) Download Pre-trained Models
 Run the download script
 
-`python src/download_pre-trained_models.py` 
+```bash 
+python src/download_pre-trained_models.py 
+```
 
 It will download models into the `/models/pre-trained` folder
 
 ## 7) Pre-process Dataset
 Continue running from the same project root folder,
 
-`python src/process_data.py process_data/dataset=nus_vocalset_vctk`
+```bash 
+python src/process_data.py process_data/dataset=nus_vocalset_vctk
+```
 
 The above command will pre-process NUS-48E, VCTK and vocalset datasets.
 
@@ -103,20 +119,27 @@ It also slices the audio into 5 sec long clips.
 ## 8) Cache speech encodings
 Run the following 
 
-`python src/cache_dataset.py model=autoencoder_speaker dataset=nus_vocalset_vctk`
+```bash 
+python src/cache_dataset.py model=autoencoder_speaker dataset=nus_vocalset_vctk
+```
 
 It will cache the downloaded pre-trained speaker encoder's embeddings.
 
 ### (Optional)
 To use cuda (Nvidia)
-`python src/cache_dataset.py model=autoencoder_speaker dataset=nus_vocalset_vctk process_data.accelerator=cuda`.
+```bash 
+python src/cache_dataset.py model=autoencoder_speaker dataset=nus_vocalset_vctk process_data.accelerator=cuda
+```
 
 or mps (Apple silicon)
-`python src/cache_dataset.py model=autoencoder_speaker dataset=nus_vocalset_vctk process_data.accelerator=mps`.
+```bash 
+python src/cache_dataset.py model=autoencoder_speaker dataset=nus_vocalset_vctk process_data.accelerator=mps
+```
 
 ## 9) Train model 
-
-`python src/train_model.py augmentations=augmentation_enable model=autoencoder_speaker dataset=nus_vocalset_vctk`
+```bash 
+python src/train_model.py augmentations=augmentation_enable model=autoencoder_speaker dataset=nus_vocalset_vctk
+```
 
 * See the `conf/training/train.yaml` for more training options to override.
   * for example, append the parameter `training.batch_size=8` to change batch size
@@ -134,7 +157,9 @@ e.g. `outputs/2023-03-20/20-11-30/mlruns`
 
 In your terminal, replace the `$PROJECT_ROOT` and outputs to your full project path and run the following.
 
-`mlflow server --backend-store-uri file:'$PROJECT_ROOT/outputs/2023-03-20/20-11-30/mlruns'`
+```bash 
+mlflow server --backend-store-uri file:'$PROJECT_ROOT/outputs/2023-03-20/20-11-30/mlruns'
+```
 
 By default, you will be able to view the experiment tracking under `http://127.0.0.1:5000/` on your browser. 
 The above is showing the configuration for MLFlow to run on localhost. 
@@ -152,7 +177,9 @@ By default, the model will save a checkpoint at every end of an epoch.
 
 Replace `$PATH/TO/MODEL/model.ckpt` to the saved model file, and run
 
-`python src/test_model.py  model=autoencoder_speaker dataset=nus_vocalset_vctk testing.checkpoint_file="$PATH/TO/MODEL/model.ckpt"`
+```bash 
+python src/test_model.py  model=autoencoder_speaker dataset=nus_vocalset_vctk testing.checkpoint_file="$PATH/TO/MODEL/model.ckpt"
+```
 
 ## 12) Export trained model into ONNX format.
 The script will convert the pytorch model into ONNX format, which will be needed for the plugin code.
@@ -160,7 +187,9 @@ The script will convert the pytorch model into ONNX format, which will be needed
 Replace `$PATH/TO/MODEL/model.ckpt` to the saved model file,
 Replace `"./models/onnx/my_model.onnx"` to specify the ONNX file path to be saved file, and run
 
-`python src/export_model_to_onnx.py export_to_onnx.checkpoint_file="$PATH/TO/MODEL/model.ckpt" export_to_onnx.export_filename="./models/onnx/my_model.onnx"`
+```bash 
+python src/export_model_to_onnx.py export_to_onnx.checkpoint_file="$PATH/TO/MODEL/model.ckpt" export_to_onnx.export_filename="./models/onnx/my_model.onnx"
+```
 
 Copy the ONNX file to the C++ plugin code.
 
@@ -204,10 +233,50 @@ It is also hoped that using vocal conversion, it will produce a timbre based dou
 
 Some papers that might be related are: 
 
-- [Tae, Jaesung, Hyeongju Kim, and Younggun Lee. "Mlp singer: Towards rapid parallel korean singing voice synthesis." 2021 IEEE 31st International Workshop on Machine Learning for Signal Processing (MLSP). IEEE, 2021.](https://arxiv.org/abs/2106.07886)
-- [Tamaru, Hiroki, et al. "Generative moment matching network-based neural double-tracking for synthesized and natural singing voices." IEICE TRANSACTIONS on Information and Systems 103.3 (2020): 639-647.](https://www.jstage.jst.go.jp/article/transinf/E103.D/3/E103.D_2019EDP7228/_pdf)
-- [AlBadawy, Ehab A., and Siwei Lyu. "Voice Conversion Using Speech-to-Speech Neuro-Style Transfer." Interspeech. 2020.](https://ebadawy.github.io/post/speech_style_transfer/Albadawy_et_al-2020-INTERSPEECH.pdf)
-- [AUTOVC: Zero-Shot Voice Style Transfer with Only Autoencoder Loss](https://arxiv.org/pdf/1905.05879.pdf)
+```bibtex
+@inproceedings{tae2021mlp,
+  title={Mlp singer: Towards rapid parallel korean singing voice synthesis},
+  author={Tae, Jaesung and Kim, Hyeongju and Lee, Younggun},
+  booktitle={2021 IEEE 31st International Workshop on Machine Learning for Signal Processing (MLSP)},
+  pages={1--6},
+  year={2021},
+  organization={IEEE}
+}
+```
+
+```bibtex
+@article{tamaru2020generative,
+  title={Generative moment matching network-based neural double-tracking for synthesized and natural singing voices},
+  author={Tamaru, Hiroki and Saito, Yuki and Takamichi, Shinnosuke and Koriyama, Tomoki and Saruwatari, Hiroshi},
+  journal={IEICE TRANSACTIONS on Information and Systems},
+  volume={103},
+  number={3},
+  pages={639--647},
+  year={2020},
+  publisher={The Institute of Electronics, Information and Communication Engineers}
+}
+```
+
+```bibtex
+@inproceedings{albadawy2020voice,
+  title={Voice Conversion Using Speech-to-Speech Neuro-Style Transfer.},
+  author={AlBadawy, Ehab A and Lyu, Siwei},
+  booktitle={Interspeech},
+  pages={4726--4730},
+  year={2020}
+}
+```
+
+```bibtex
+@inproceedings{qian2019autovc,
+  title={Autovc: Zero-shot voice style transfer with only autoencoder loss},
+  author={Qian, Kaizhi and Zhang, Yang and Chang, Shiyu and Yang, Xuesong and Hasegawa-Johnson, Mark},
+  booktitle={International Conference on Machine Learning},
+  pages={5210--5219},
+  year={2019},
+  organization={PMLR}
+}
+```
 
 # Goal
 - To generate high quality audio usable for mixing. (sample rate >= 44100Hz)
@@ -312,7 +381,7 @@ TODO: freezing method.
 
 - VCTK
   - [Veaux, Christophe, Junichi Yamagishi, and Kirsten MacDonald. "CSTR VCTK corpus: English multi-speaker corpus for CSTR voice cloning toolkit." University of Edinburgh. The Centre for Speech Technology Research (CSTR) (2017).](https://datashare.ed.ac.uk/handle/10283/3443)
-- more data to come...
+
 
 # Experiments
 - use a simple wavenet. time based input/output, convert to run in JUCE
@@ -335,10 +404,10 @@ TODO: freezing method.
   - the 32 channels in the bottleneck vector z, where it is sized [batch, 32, T], is likely to represent some frequency bands based on the quick experiment on zeroing out some channels. See (notebooks/reducing_bottleneck_of_AE(channels).ipynb) 
   
 # Description of Scripts
-- download_data.py -> downloads dataset into data/raw, then pick the audio and place into data/interim
-- download_pre-trained_models.py -> download pre-trained models into models/pre-trained for later uses. 
-- process_data.py -> use the audio from data/interim, process the audio into xx sec blocks, cuts silences and place into data/processed
-- cache_dataset.py -> cache dataset's speech embeddings from wav files.
-- train_model.py -> trains data from data/processed,
-- test_model.py -> test (output as metrics) and do prediction (outputs for listening ) from data/processed
-- export_model_to_onnx.py -> export model to onnx 
+- `download_data.py` -> downloads dataset into data/raw, then pick the audio and place into data/interim
+- `download_pre-trained_models.py` -> download pre-trained models into models/pre-trained for later uses. 
+- `process_data.py` -> use the audio from data/interim, process the audio into xx sec blocks, cuts silences and place into data/processed
+- `cache_dataset.py` -> cache dataset's speech embeddings from wav files.
+- `train_model.py` -> trains data from data/processed,
+- `test_model.py` -> test (output as metrics) and do prediction (outputs for listening ) from data/processed
+- `export_model_to_onnx.py` -> export model to onnx 
