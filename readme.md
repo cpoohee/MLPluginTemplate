@@ -1,17 +1,22 @@
 # Introduction
-This project investigates the use of AI generative models create vocal doubles for mixing from a single vocal take.
-This is intended to be a short project aimed for submission for [Neural Audio Plugin Competition](https://www.theaudioprogrammer.com/neural-audio).
+This project investigates the use of AI generative models for music production.
+This was intended to be a short project aimed for submission for [Neural Audio Plugin Competition 2023](https://www.theaudioprogrammer.com/neural-audio).
 
-There are 2 separate git repository for this plugin competition. 
+However, due to lack of time, the model is not working at the moment. 
+Therefore, this repo will be repurposed to be a template for future models to be explored.
+
+There are 2 separate git repository for this plugin.
 The first is for the machine learning code. The second is for the plugin code for running the trained model.
 
 - https://github.com/cpoohee/SVPluginComp_ML (this repo, the ML code base)
 - https://github.com/cpoohee/NeuralDoubler (Plugin code)
 
-# Quick Installation Instructions
+[//]: # (# Quick Installation Instructions)
 
-- For those who just want to get the plugin running, go to our plugin repo https://github.com/cpoohee/NeuralDoubler, and follow the instructions there.
-- For those who wants to run the machine learning code, do follow the subsequent instructions in this repo.
+[//]: # ()
+[//]: # (- For those who just want to get the plugin running, go to our plugin repo https://github.com/cpoohee/NeuralDoubler, and follow the instructions there.)
+
+[//]: # (- For those who wants to run the machine learning code, do follow the subsequent instructions in this repo.)
 
 # Replication Instructions
 
@@ -19,7 +24,8 @@ The first is for the machine learning code. The second is for the plugin code fo
 
 - The ML code is created to run with Nvidia GPU (cuda) on Ubuntu 20.04 or Apple Silicon hardware (mps) in mind.
   - For installing cuda 11.8 drivers (https://cloud.google.com/compute/docs/gpus/install-drivers-gpu)
-- Prepare at least 150GB of free hdd space. The dataset and cached dataset size used are about 50 GB. 
+- Prepare at least 150GB of free hdd space. 
+- The current dataset and cached files size used are about 50 GB. (nus-48e, vocalset, vctk) 
 
 - Install Miniconda. [See guide](https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html)
 - For Apple Silicon, you will need to use Miniconda for mps acceleration. Anaconda is not recommended.
@@ -212,6 +218,16 @@ Ideally it should be is at least 44100Hz.
 The resultant generated audio are therefore missing high-end frequencies 10khz and more.
 Our plugin should avoid not sacrifice fidelity. 
 
+# Practical Plugin Goals
+- To generate high quality audio usable for mixing. (sample rate >= 44100Hz)
+- plugin latency should be low. ( <= 1 sec of samples )
+- deterministic/reproducibility of plugin models ( the AI model should not churn out a different output for the same playback)
+- Model size should be acceptable for plugin installation. ( <200MB )
+- CPU usage should also be acceptable. (10 instances running real time in a DAW at the same time)
+
+The end result should produce natural sounding audio and also subjectively judged.
+
+## Double tracking Ideas
 In a typical highly produced multitrack for mixing, the vocal double/triples or more could be recorded for mixing. 
 An experienced mixer will be able to utilise the doubling effect to enhance the performance by adding the double track balanced just below the lead vocal track.
 The resulting vocal performance will cut through the mix and sound thicker.
@@ -278,24 +294,7 @@ Some papers that might be related are:
 }
 ```
 
-# Goal
-- To generate high quality audio usable for mixing. (sample rate >= 44100Hz)
-- plugin latency should be low. ( <= 1 sec of samples )
-- deterministic/reproducibility of plugin models ( the AI model should not churn out a different output for the same playback)
-- Model size should be acceptable for plugin installation. ( <200MB )
-- CPU usage should also be acceptable. (10 instances running real time in a DAW at the same time)
-
-The end result should produce natural sounding audio which might only be subjectively judged.
-
-# Stretched Goal
-- provide a vocal personality for VC, and use it for background harmony.
-- auto generate harmony similar to Waves's Harmony plugin, with our vocal personality.
-
-# Our Method
-For ML datasets, usually we feed an input X and target Y for the model to learn (X->Y).
-
-However, our target Y is not an exact data since we need the model to generate a new voice.
-
+## Ideas tried
 One way is to utilise existing pre-trained speaker encoder from https://github.com/mindslab-ai/voicefilter.
 This is where X -> speaker encoder -> S, where X is a waveform, S is a speaker embedding vector of 256. 
 The speaker embedder was originally used to classify and identify 3549 speakers from libriSpeech and VoxCeleb1 dataset. 
@@ -315,80 +314,104 @@ Studying further on the `autoencoder1d-AT-v1 Reconstruction` bottlenecks, we hav
 `reducing_bottleneck_of_AE(channels).ipynb` and `reducing_bottleneck_of_AE.ipynb`. 
 It shows how much audio information is being represented in the latent z bottleneck vectors. 
 
-TODO: write the final method of fusing the speaker embeddings (dvec) into latent z.
+We let the current speaker input to the AE as y. 
+Another target speaker's voice as y_target.
 
-Pseudo code
-- z' = LSTM(concat [dvec, z]) , or
-- z' = StyleAdaptiveLayerNorm(z, dvec)
+For the AE to encode and decode, we let 
 
+` z = AE.encode(y)`
+` y' = AE.decode(z)`
 
-TODO: describe final loss function
-- MSE
-- Multi resolution STFT
-- Using speaker encoder's embedding, and do MSE on it.
+where `y'`is the reconstructed audio from the AE.
+The current z vector has 32 channels followed by samples//32 sized.  
 
-TODO: freezing method.
-- any drop out ? 
-- Freeze encoder, decoder, train fuser z and dvec
-- unfreeze decoder,
-- vs unfreezed training of decoder and fuser. 
+To get speaker embedding, we call
 
-# ToDos
-- Create a simple JUCE plugin without AI as a start. (done)
-- Search good quality datasets, do preprocessing (done)
-- prepare possible augmentations (done)
-- create the basic wavenet (done)
-- investigate loss functions (done)
-  - checked out ESR, DC, LogCosh, SNR, SDSDR, MSE, various stft 
-  - quick training suggest each have its own weakness see results.xlsx in models
-  - sticking to multi res stft after it sounds the most natural 
-- train a decent model without bells and whistles, etc augmentation. just able to produce identity sound will do. (done)
-- create a pipeline of model deployment into JUCE (done)
-  - convert model to ONNX, 
-  - in JUCE, use ONNX runtime in c++
-- Iterate experiments. 
-  - check out STFT based loss functions, already part of auraloss (done)
-  - check U wave net. (done)
-  - train 'spectral recovery' type of neural model (done)
-    - using low passed input. predict full spectrum sound.
-  - Increase model size on the small NUS dataset, evaluate usefulness(done)
-  - However, there is a realisation that training from scratch is not practical with current time and machine limitation.
-  - Try out pre-trained auto encoders (done)
-    - using an oversampled audio into an encoder trained in 48kHz seems to be a possible solution to reduce degrading quality for short sample block
-    - Notebook investigating auto encoders
-  - Try out pre-trained speaker embedding (done)
-    - re process data folders.. etc speakerA/1.wav, speakerB/1.wav
-    - do tsne plot of the output embeddings of the speakers.
-  - Try out auto encoder + speaker embedding finetuning 
-    - train with A's wave on target speaker A embedding, reconstructing A's wave 
-  - test with A's wave on target speaker B embedding, reconstructing A's wave with B's style  
+`dvec_target = speakerEmbed(y_target)`
 
-- Improve plugin usefulness
-  - UI
-  - Sound, might need tricks to beat the weird bleep during the front of output 
-- prepare a video demo
+note that the dvec is a 256 sized vector.
 
-# Stretched ToDos
-- download and extract free multitracks that contains vocal doubles, use it to train/ fine-tune the model
+We attempted an LSTM layer and a SALN layer that tries to learn and encode the latent variables with speaker embeddings `dvec`
 
-# Datasets
-- NUS-48E
-  - [Duan, Zhiyan, et al. "The NUS sung and spoken lyrics corpus: A quantitative comparison of singing and speech." 2013 Asia-Pacific Signal and Information Processing Association Annual Summit and Conference. IEEE, 2013.](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6694316)
-  - 12 singers with 4 songs for each singer
-  - 48 pairs of sung and spoken
-- VocalSet
-  - [Wilkins, Julia, et al. "VocalSet: A Singing Voice Dataset." ISMIR. 2018.](https://zenodo.org/record/1193957#.Y_zvvexBzA0)
+- `z' = LSTM(concat [dvec, z])` , or
+- `z' = StyleAdaptiveLayerNorm(z, dvec)`
 
-- VCTK
-  - [Veaux, Christophe, Junichi Yamagishi, and Kirsten MacDonald. "CSTR VCTK corpus: English multi-speaker corpus for CSTR voice cloning toolkit." University of Edinburgh. The Centre for Speech Technology Research (CSTR) (2017).](https://datashare.ed.ac.uk/handle/10283/3443)
+which is then passed to the AE decode `y' = AE.decode(z')` 
 
+Loss functions were:
 
-# Experiments
-- use a simple wavenet. time based input/output, convert to run in JUCE
-- use a pre-trained auto encoder
-- use a pre-trained speaker embedding
+`loss = lambda_wav * mse(y, y') + lambda_emb * mse(dvec_target, speakerEmbed(y'))` 
 
-# Findings
+which is a weighted regression mse of waveform, and mse of the speaker embeddings.
+
+The experiments setup were to freeze the AE weights. and train the LSTM or SALN layer.
+
+For LSTM,
+First 20 epochs were conducted, under those conditions: 
+
+- frozen AE weights. 
+- input y and target y belongs to the same speaker to test perfect reconstruction.
+- lambda_emb set to 0
+
+Results listening test from the initial 20 epoch LSTM, was resulting in very noisy sounds, nothing like a perfect reconstruction.
+
+Therefore, this idea was abandoned. We try the simpler SALN, which was adatped from meta-stylespeech.
+
+```bibtex
+@inproceedings{min2021meta,
+  title={Meta-stylespeech: Multi-speaker adaptive text-to-speech generation},
+  author={Min, Dongchan and Lee, Dong Bok and Yang, Eunho and Hwang, Sung Ju},
+  booktitle={International Conference on Machine Learning},
+  pages={7748--7759},
+  year={2021},
+  organization={PMLR}
+}
+```
+
+For SALN, 
+first 20 epochs were conducted, under those conditions: 
+
+- frozen AE weights. 
+- input y and target y belongs to the same speaker to test perfect reconstruction.
+- lambda_emb set to 0
+- learning rate at 1e-4
+
+results was a good reconstruction.
+
+We continued training the model until 40 epochs with:
+- frozen AE encoder weights 
+- unfrozen AE decoder
+- lambda_emb set to 10
+- learning rate at 1e-4
+
+The result was a repeated noise, which it might be trying to match a noisy sound that lowers the MSE of embedding but however it sounds horrible.
+
+We rolled back and trained from the 20 epoch checkpoint to 40 epochs with 
+- frozen AE weights. 
+- lambda_emb and lambda_wav set to 1
+- learning rate at 1e-4
+
+The result was low quality reconstructed playback even though MSE losses were low.
+
+Then we continued the next 20 epochs with 
+- frozen AE encoder weights 
+- unfrozen AE decoder
+- lambda_emb and lambda_wav set to 1
+- lowered learning rate to 1e-5
+
+The result was low quality reconstructed playback too. And this is where I ran out of time. 
+
+## Learning outcomes
+After thoughts, the current approach to infuse latent embeddings are limited to the alignment of the audio. 
+Each embedding vector only has an influence to a fixed blocksize sliced from a continuous audio. 
+This is the result of using a time domain AE. 
+
+If the input is in frequency domain, it could potentially be better.
+
+We might need some kind of discriminator network for loss objective function. 
+As the current MSE loss on embedding might on the surface learns to match the dvecs, but doing by producing noises. 
+
+# Other Findings
 - multi res stft loss function creates the most natural sounding generation, tested on basic wavenet
 - melspectrum, any preemphasis also resulted in less natural sounding generation
 - augmentations done on training/testing data only produces models that predicts the original wav, 
@@ -402,7 +425,29 @@ TODO: freezing method.
   - we should be able to oversample the audio, passing 32768 samples into the pre-trained model(trained in 48kHz), which represents a shorter blocktime (0.17 sec).
   - might explore `cached_conv` library to solve clicks from inferencing the beginning of the sample block. Onnx might not be able to convert it??
   - the 32 channels in the bottleneck vector z, where it is sized [batch, 32, T], is likely to represent some frequency bands based on the quick experiment on zeroing out some channels. See (notebooks/reducing_bottleneck_of_AE(channels).ipynb) 
-  
+
+
+## Future AI Ideas
+
+- lead vocal separation from other voices. 
+  - Useful for recordings done with multiple singers in the same room. 
+  - E.g. 
+    - the need to keep the lead vocal, but the harmony from second singer is out of tune.
+    - say 2 singers sang in unison, but production needs a harmony instead. potential autotune application.
+- Search for more pre-trained models suitable for fine-tuning. 
+
+# Datasets
+- NUS-48E
+  - [Duan, Zhiyan, et al. "The NUS sung and spoken lyrics corpus: A quantitative comparison of singing and speech." 2013 Asia-Pacific Signal and Information Processing Association Annual Summit and Conference. IEEE, 2013.](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6694316)
+  - 12 singers with 4 songs for each singer
+  - 48 pairs of sung and spoken
+- VocalSet
+  - [Wilkins, Julia, et al. "VocalSet: A Singing Voice Dataset." ISMIR. 2018.](https://zenodo.org/record/1193957#.Y_zvvexBzA0)
+
+- VCTK
+  - [Veaux, Christophe, Junichi Yamagishi, and Kirsten MacDonald. "CSTR VCTK corpus: English multi-speaker corpus for CSTR voice cloning toolkit." University of Edinburgh. The Centre for Speech Technology Research (CSTR) (2017).](https://datashare.ed.ac.uk/handle/10283/3443)
+
+
 # Description of Scripts
 - `download_data.py` -> downloads dataset into data/raw, then pick the audio and place into data/interim
 - `download_pre-trained_models.py` -> download pre-trained models into models/pre-trained for later uses. 

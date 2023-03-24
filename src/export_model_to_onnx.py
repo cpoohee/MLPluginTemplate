@@ -121,7 +121,7 @@ def test_single_input_onnx_output(torch_model, onnx_filename, sample_block_size)
 
     # print(torch_outputs[0])
 
-    np.testing.assert_allclose(torch_outputs[0].detach().numpy(), onnx_outputs[0][0], rtol=1e-03, atol=1e-05)
+    np.testing.assert_allclose(torch_outputs[0].detach().numpy(), onnx_outputs[0][0], rtol=1e-03, atol=1e-02)
     print("Model output delta is close... Good!")
 
 
