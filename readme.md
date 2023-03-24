@@ -9,7 +9,7 @@ There are 2 separate git repository for this plugin.
 The first is for the machine learning code. The second is for the plugin code for running the trained model.
 
 - https://github.com/cpoohee/MLPluginTemplate (this repo, the ML code base)
-- https://github.com/cpoohee/NeuralDoubler (Plugin code)
+- https://github.com/cpoohee/NeuralPluginTemplate (Plugin code)
 
 [//]: # (# Quick Installation Instructions)
 
