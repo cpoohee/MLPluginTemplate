@@ -11,13 +11,6 @@ The first is for the machine learning code. The second is for the plugin code fo
 - https://github.com/cpoohee/MLPluginTemplate (this repo, the ML code base)
 - https://github.com/cpoohee/NeuralPluginTemplate (Plugin code)
 
-[//]: # (# Quick Installation Instructions)
-
-[//]: # ()
-[//]: # (- For those who just want to get the plugin running, go to our plugin repo https://github.com/cpoohee/NeuralDoubler, and follow the instructions there.)
-
-[//]: # (- For those who wants to run the machine learning code, do follow the subsequent instructions in this repo.)
-
 # Replication Instructions
 
 ## 1) Pre-requisites
