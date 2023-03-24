@@ -8,7 +8,7 @@ Therefore, this repo will be repurposed to be a template for future models to be
 There are 2 separate git repository for this plugin.
 The first is for the machine learning code. The second is for the plugin code for running the trained model.
 
-- https://github.com/cpoohee/SVPluginComp_ML (this repo, the ML code base)
+- https://github.com/cpoohee/MLPluginTemplate (this repo, the ML code base)
 - https://github.com/cpoohee/NeuralDoubler (Plugin code)
 
 [//]: # (# Quick Installation Instructions)
@@ -57,7 +57,7 @@ Go to your terminal, create a folder that you would like to clone the repo.
 
 Run the following command in your terminal to clone this repo. 
 ```bash 
-git clone https://github.com/cpoohee/SVPluginComp_ML
+git clone https://github.com/cpoohee/MLPluginTemplate
 ```
 
 ## 4) Create conda environment
@@ -81,7 +81,7 @@ A script is created for downloading the following datasets
 Go to the project root folder
 
 ```bash 
-cd SVPluginComp_ML
+cd MLPluginTemplate
 ```
 
 Run the download script
