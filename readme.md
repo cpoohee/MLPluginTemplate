@@ -23,7 +23,9 @@ The first is for the machine learning code. The second is for the plugin code fo
 ## 1) Pre-requisites
 
 - The ML code is created to run with Nvidia GPU (cuda) on Ubuntu 20.04 or Apple Silicon hardware (mps) in mind.
-  - For installing cuda 11.8 drivers (https://cloud.google.com/compute/docs/gpus/install-drivers-gpu)
+  - For installing cuda 11.8 drivers, see (https://cloud.google.com/compute/docs/gpus/install-drivers-gpu)
+  - For Apple Silicon, set `PYTORCH_ENABLE_MPS_FALLBACK=1` as your environment variable when running python scripts. 
+    - as not all pytorch ops are mps compatible. 
 - Prepare at least 150GB of free hdd space. 
 - The current dataset and cached files size used are about 50 GB. (nus-48e, vocalset, vctk) 
 
@@ -89,10 +91,11 @@ Run the download script
 python src/download_data.py
 ``` 
 
-* in case of failed downloads especially from gdrive, you may need try again later. 
+* in case of failure especially from gdrive links, you try to delete contents of `/data/raw` and try again later. 
+the scripts will skip the download if it detects the folder exists.
 
 The script will download the raw datasets and saves it onto `/data/raw` folder.
-It also transcodes and transfers useful audio files to wav into the `/data/interim` folder.
+It also transcodes to `wav` format and transfers useful audio files to the `/data/interim` folder.
 
 ## 6) Download Pre-trained Models
 Run the download script
