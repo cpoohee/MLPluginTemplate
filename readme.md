@@ -212,7 +212,7 @@ There are definitely more AI applications than listed above.
 However, most of the demos are lacking in fidelity with audio downsampled to 20khz or less. 
 Ideally it should be is at least 44100Hz.
 The resultant generated audio are therefore missing high-end frequencies 10khz and more.
-Our plugin should avoid not sacrifice fidelity. 
+Our plugin should avoid sacrifice fidelity. 
 
 # Practical Plugin Goals
 - To generate high quality audio usable for mixing. (sample rate >= 44100Hz)
@@ -221,7 +221,7 @@ Our plugin should avoid not sacrifice fidelity.
 - Model size should be acceptable for plugin installation. ( <200MB )
 - CPU usage should also be acceptable. (10 instances running real time in a DAW at the same time)
 
-The end result should produce natural sounding audio and also subjectively judged.
+The end result should produce natural sounding audio and also subjectively appealing.
 
 ## Double tracking Ideas
 In a typical highly produced multitrack for mixing, the vocal double/triples or more could be recorded for mixing. 
@@ -404,12 +404,15 @@ This is the result of using a time domain AE.
 
 If the input is in frequency domain, it could potentially be better.
 
-We might need some kind of discriminator network for loss objective function. 
-As the current MSE loss on embedding might on the surface learns to match the dvecs, but doing by producing noises. 
+Some kind of flexible time shifting and alignments mechanism are need to consider for phase shifts to work. 
+The current model is not able to do that.
+
+We might need some kind of discriminator network for our loss objective function. 
+The current MSE loss on embeddings might on the surface learns to closely match dvecs, but by doing so produces noise without meaningful audio. 
 
 # Other Findings
-- multi res stft loss function creates the most natural sounding generation, tested on basic wavenet
-- melspectrum, any preemphasis also resulted in less natural sounding generation
+- multi res stft loss function creates the most natural sounding generation, tested on basic wavenet reproduction training.
+- melspectrum and any preemphasis also resulted in less natural sounding generation (also tested on basic wavenet reproduction)
 - augmentations done on training/testing data only produces models that predicts the original wav, 
   - the resulting audio is almost a copy of input.
   - might need a new loss function to penalise exact copy. even then, the audio could be phased flip, eg cossimloss == 1 or -1 
