@@ -315,6 +315,7 @@ Another target speaker's voice as y_target.
 For the AE to encode and decode, we let 
 
 ` z = AE.encode(y)`
+
 ` y' = AE.decode(z)`
 
 where `y'`is the reconstructed audio from the AE.
