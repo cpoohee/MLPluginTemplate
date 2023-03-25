@@ -17,8 +17,7 @@ The first is for the machine learning code. The second is for the plugin code fo
 
 - The ML code is created to run with Nvidia GPU (cuda) on Ubuntu 20.04 or Apple Silicon hardware (mps) in mind.
   - For installing cuda 11.8 drivers, see (https://cloud.google.com/compute/docs/gpus/install-drivers-gpu)
-  - For Apple Silicon, set `PYTORCH_ENABLE_MPS_FALLBACK=1` as your environment variable when running python scripts. 
-    - as not all pytorch ops are mps compatible. 
+  - For Apple Silicon, set `PYTORCH_ENABLE_MPS_FALLBACK=1` as your environment variable when running python scripts, as not all pytorch ops are mps compatible. 
 - Prepare at least 150GB of free hdd space. 
 - The current dataset and cached files size used are about 50 GB. (nus-48e, vocalset, vctk) 
 
