@@ -90,13 +90,13 @@ the scripts will skip the download if it detects the folder exists.
 
 
 ## 6) Download Pre-trained Models
-Run the download script
+Edit the download Pre-trained Models script for your needs.
 
+Run the following, and it will download pre-trained models into the `/models/pre-trained` folder
 ```bash 
 python src/download_pre-trained_models.py 
 ```
 
-It will download models into the `/models/pre-trained` folder
 
 ## 7) Pre-process Dataset
 **Important!!**  Current pre-process code assumes an audio input and a labelled target format.
@@ -119,7 +119,7 @@ It also slices the audio into 5 sec long clips.
 
 * See the `conf/process_data/process_root.yaml` for more detailed configurations.
 
-## 8) Cache speech encodings
+## 8) Cache speech encodings (specific to AE models in this example)
 Run the following 
 
 ```bash 
@@ -139,7 +139,30 @@ or mps (Apple silicon)
 python src/cache_dataset.py model=autoencoder_speaker dataset=nus_vocalset_vctk process_data.accelerator=mps
 ```
 
-## 9) Train model 
+## 9) Dataloader
+Modify the `src/datamodule/audio_dataloader.py` for your model input/target needs. 
+
+Augmentation codes can be found here. 
+Augmentation parameters should be added/modified in `conf/augmentations` yaml files.
+
+
+## 10) Model
+Add or modify pytorch lightning model codes under `src/model`.  
+Add or modify model parameters `conf/model` yaml files.
+
+Make sure the model input/target format from your dataloader matches your model requirements.
+
+For example, this dataloader has audio x and y, followed by vectors and label.
+```
+def _shared_eval_step(self, batch):
+    x, y, dvecs, name = batch
+    own_dvec, target_dvec = dvecs
+    y_pred = self.forward(x, target_dvec)
+    return y, y_pred, target_dvec, name
+```
+
+## 11) Train model
+
 ```bash 
 python src/train_model.py augmentations=augmentation_enable model=autoencoder_speaker dataset=nus_vocalset_vctk
 ```
@@ -153,7 +176,7 @@ python src/train_model.py augmentations=augmentation_enable model=autoencoder_sp
 
 * See `conf/model/autoencoder_speaker.yaml` for model specifications to override.
 
-## 10) Experiment Tracking
+## 12) Experiment Tracking
 Under the `./outputs/` folder, look for the current experiment's `mlruns` folder.
 
 e.g. `outputs/2023-03-20/20-11-30/mlruns`
@@ -176,15 +199,18 @@ Models will be saved into the folders as `.ckpt` under
 
 By default, the model will save a checkpoint at every end of an epoch.
 
-## 11) Test and Predict the model
+## 13) Test and Predict the model
 
 Replace `$PATH/TO/MODEL/model.ckpt` to the saved model file, and run
 
 ```bash 
 python src/test_model.py  model=autoencoder_speaker dataset=nus_vocalset_vctk testing.checkpoint_file="$PATH/TO/MODEL/model.ckpt"
 ```
+Edit the model parameter to the model yaml file. (for this case `conf/model/autoencoder_speaker.yaml` is entered as `model=autoencoder_speaker`)
 
-## 12) Export trained model into ONNX format.
+See `conf/testing/test.yaml` for more configurations.
+
+## 14) Export trained model into ONNX format.
 The script will convert the pytorch model into ONNX format, which will be needed for the plugin code.
 
 Replace `$PATH/TO/MODEL/model.ckpt` to the saved model file,

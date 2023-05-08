@@ -39,17 +39,17 @@ def main(cfg: DictConfig):
     ckpt_path = cfg.testing.checkpoint_file
     assert (ckpt_path is not None)
 
-    if cfg.testing.model_name == 'WaveNet_PL':
+    if cfg.model.model_name == 'WaveNet_PL':
         model = WaveNet_PL.load_from_checkpoint(cur_path / Path(ckpt_path))
-    elif cfg.testing.model_name == 'WaveUNet_PL':
+    elif cfg.model.model_name == 'WaveUNet_PL':
         model = WaveUNet_PL.load_from_checkpoint(cur_path / Path(ckpt_path))
-    elif cfg.testing.model_name == 'AutoEncoder_PL':
+    elif cfg.model.model_name == 'AutoEncoder_PL':
         model = AutoEncoder_PL.load_from_checkpoint(cur_path / Path(ckpt_path))
-    elif cfg.testing.model_name == 'AutoEncoder_Speaker_PL':
+    elif cfg.model.model_name == 'AutoEncoder_Speaker_PL':
         cfg.model.embedder_path = cur_path / Path(cfg.model.embedder_path)
         cfg.model.ae_path = cur_path / Path(cfg.model.ae_path)
         model = AutoEncoder_Speaker_PL.load_from_checkpoint(cur_path / Path(ckpt_path), cfg=cfg)
-    elif cfg.testing.model_name == 'AutoEncoder_Speaker_PL2':
+    elif cfg.model.model_name == 'AutoEncoder_Speaker_PL2':
         cfg.model.embedder_path = cur_path / Path(cfg.model.embedder_path)
         cfg.model.ae_path = cur_path / Path(cfg.model.ae_path)
         model = AutoEncoder_Speaker_PL2.load_from_checkpoint(cur_path / Path(ckpt_path), cfg=cfg)
@@ -74,8 +74,8 @@ def main(cfg: DictConfig):
         model = model.to(dev)
 
     pred_with_dvec = False
-    if cfg.testing.model_name == 'AutoEncoder_Speaker_PL' or \
-            cfg.testing.model_name == 'AutoEncoder_Speaker_PL2':
+    if cfg.model.model_name == 'AutoEncoder_Speaker_PL' or \
+            cfg.model.model_name == 'AutoEncoder_Speaker_PL2':
         pred_with_dvec = True
 
     with torch.no_grad():
