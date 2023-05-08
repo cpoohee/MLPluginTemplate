@@ -35,14 +35,15 @@ def main(cfg: DictConfig):
 
     print("Preparing dataset:", dataset_label)
 
-    #train test split by speakers
-    speakers = []
+    #train test split by target
+    targets = []
     for a_path in audio_dirs:
         dataset_path = Path(root_path / a_path)
-        dataset_speakers = [x for x in dataset_path.iterdir() if x.is_dir()]
-        speakers = speakers + dataset_speakers
+        dataset_targets = [x for x in dataset_path.iterdir() if x.is_dir()]
+        targets = targets + dataset_targets
 
-    X_train, X_valtest, y_train, y_valtest = train_test_split(speakers, speakers,
+    # input is the same as output
+    X_train, X_valtest, y_train, y_valtest = train_test_split(targets, targets,
                                                               test_size=(1.0 - train_ratio),
                                                               random_state=seed)
     X_test, X_val, y_test, y_val = train_test_split(X_valtest, y_valtest,
@@ -81,6 +82,7 @@ def main(cfg: DictConfig):
                   sr=sr, audio_length_ms=None, ext=ext)
 
 
+# audio_paths_Y currently used, only folder name used as labels
 def process_audio(target_path, audio_paths_X, audio_paths_Y,
                   sr=44100, audio_length_ms=None, ext='wav',
                   min_silence_len_ms=20,
@@ -93,20 +95,20 @@ def process_audio(target_path, audio_paths_X, audio_paths_Y,
     print('Creating', target_path)
     Path.mkdir(target_path)
 
-    for speaker_path in tqdm(audio_paths_X, desc='Processing Speaker', position=0):
-        # create folders for each speaker
-        # WARNING: this assumes unique speaker names across different datasets!
-        if (target_path/speaker_path.name).exists():
-            assert False , 'speaker names are not unique!'
-        Path.mkdir(target_path/speaker_path.name)
+    for target_path in tqdm(audio_paths_X, desc='Processing Target', position=0):
+        # create folders for each target
+        # WARNING: this assumes unique target names across different datasets!
+        if (target_path/target_path.name).exists():
+            assert False , 'target names are not unique!'
+        Path.mkdir(target_path/target_path.name)
 
-        # find audio under speaker paths
-        speaker_files = librosa.util.find_files(speaker_path, ext=ext)
-        for file_x in tqdm(speaker_files, desc='Processing Audio', position=1, leave=False):
+        # find audio under target paths
+        target_files = librosa.util.find_files(target_path, ext=ext)
+        for file_x in tqdm(target_files, desc='Processing Audio', position=1, leave=False):
             # ignore audio_paths_Y
             x = AudioSegment.from_file(file_x, ext, frame_rate=sr)
 
-            target_path_x = (target_path / speaker_path.name)
+            target_path_x = (target_path / target_path.name)
 
             # force to mono
             x = x.set_channels(1)
